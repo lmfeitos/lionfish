@@ -1,0 +1,153 @@
+---
+title: "lionfish_model_eemb279"
+author: "Leonardo Feitosa"
+date: "09/02/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(here)
+library(janitor)
+library(patchwork)
+```
+
+```{r}
+# read in the data
+lionfish_tl <- read.csv(here("data", "lionfish_length-frequency_data.csv"), sep = ";") %>% 
+  clean_names() %>% 
+  select(total_length_tl:august_2015)
+  
+
+lionfish_long <- lionfish_tl %>% 
+  pivot_longer(cols = april_2013:august_2015,
+               names_to = "year",
+               values_to = "frequency")
+```
+
+```{r}
+lion_ap_2013 <- ggplot(data = lionfish_tl) +
+  geom_col(aes(x = total_length_tl, y = april_2013)) +
+  labs(x = "",
+       y = "",
+       title = "April 2013") +
+  theme_bw() +
+  theme(axis.title = element_text(color = "black", size = 12),
+        axis.text = element_text(color = "black", size = 10))
+```
+
+```{r}
+lion_aug_2013 <- ggplot(data = lionfish_tl) +
+  geom_col(aes(x = total_length_tl, y = august_2013)) +
+  labs(x = "",
+       y = "",
+       title = "August 2013") +
+  theme_bw() +
+  theme(axis.title = element_text(color = "black", size = 12),
+        axis.text = element_text(color = "black", size = 10))
+```
+
+```{r}
+lion_ap_2014 <- ggplot(data = lionfish_tl) +
+  geom_col(aes(x = total_length_tl, y = april_2014)) +
+  labs(x = "",
+       y = "",
+       title = "April 2014") +
+  theme_bw() +
+  theme(axis.title = element_text(color = "black", size = 12),
+        axis.text = element_text(color = "black", size = 10))
+```
+
+```{r}
+lion_jul_2014 <- ggplot(data = lionfish_tl) +
+  geom_col(aes(x = total_length_tl, y = july_2014)) +
+  labs(x = "",
+       y = "",
+       title = "July 2014") +
+  theme_bw() +
+  theme(axis.title = element_text(color = "black", size = 12),
+        axis.text = element_text(color = "black", size = 10))
+```
+
+```{r}
+lion_aug_2014 <- ggplot(data = lionfish_tl) +
+  geom_col(aes(x = total_length_tl, y = august_2014)) +
+  labs(x = "",
+       y = "",
+       title = "August 2014") +
+  theme_bw() +
+  theme(axis.title = element_text(color = "black", size = 12),
+        axis.text = element_text(color = "black", size = 10))
+```
+
+```{r}
+lion_oc_2014 <- ggplot(data = lionfish_tl) +
+  geom_col(aes(x = total_length_tl, y = october_2014)) +
+  labs(x = "",
+       y = "",
+       title = "October 2014") +
+  theme_bw() +
+  theme(axis.title = element_text(color = "black", size = 12),
+        axis.text = element_text(color = "black", size = 10))
+```
+
+
+```{r}
+lion_nov_2014 <- ggplot(data = lionfish_tl) +
+  geom_col(aes(x = total_length_tl, y = november_2014)) +
+  labs(x = "",
+       y = "",
+       title = "November 2014") +
+  theme_bw() +
+  theme(axis.title = element_text(color = "black", size = 12),
+        axis.text = element_text(color = "black", size = 10))
+```
+
+```{r}
+lion_jan_2015 <- ggplot(data = lionfish_tl) +
+  geom_col(aes(x = total_length_tl, y = january_2015)) +
+  labs(x = "",
+       y = "",
+       title = "January 2015") +
+  theme_bw() +
+  theme(axis.title = element_text(color = "black", size = 12),
+        axis.text = element_text(color = "black", size = 10))
+```
+
+
+```{r}
+lion_aug_2015 <- ggplot(data = lionfish_tl) +
+  geom_col(aes(x = total_length_tl, y = august_2015)) +
+  labs(x = "",
+       y = "",
+       title = "August 2015") +
+  theme_bw() +
+  theme(axis.title = element_text(color = "black", size = 12),
+        axis.text = element_text(color = "black", size = 10))
+```
+
+
+```{r, fig.height=10}
+(lion_ap_2013 + lion_aug_2013) /
+  (lion_ap_2014 + lion_jul_2014) /
+  (lion_aug_2014 + lion_oc_2014) /
+  (lion_nov_2014 + lion_jan_2015) /
+  (lion_aug_2015) +
+  plot_annotation(tag_levels = "A")
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
