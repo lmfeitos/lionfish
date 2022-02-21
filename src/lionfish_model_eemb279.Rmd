@@ -149,9 +149,10 @@ lionfish_sum <- lionfish_long %>%
 
 ```{r}
 l_inf <- 448 #(mm)
+t_0 <- 0
 k <- 0.47 # Brody growth coefficient
 c <- 0.61 # intensity of seasonal growth oscilation. Varies from 0 to 1, with zero being no seasonality and one extreme seasonality
-t_s <- 0.21
+t_s <- 0.71 # can't figure out where this value comes from but it's in the formula
 t_b <- 0.42
 season <- "yes"
 var_size_age <- "variable"
@@ -171,10 +172,11 @@ for(i in 2:length(tset)) {
   
   N <- N.simu1[i - 1] # placeholder
   
-  # calculate population growth
-  s_t <- (c * k)/(2 * pi) * sin(pi * (t - t_s)) # formula 3 of the paper
-  s_t0 <-(c * k)/(2 * pi) * sin(pi * (t_0 - t_s)) # formula 4 of the paper
-  l <- l_inf * (1 - e^(-K * (t - t_0) - s(t) + s(t_0))) # formula 2 of the paper
+  # calculate growth from VBGF
+  l_t <- l_inf * (1 - exp(- k * (tset - t_0) + (c * k/ 2 * pi) * sin(pi) * (tset - t_s) - (c * k / 2 * pi) * sin(pi) * (t_s))) # formula 8 of the paper
+  
+  # total growth
+  N.simu1[i] <- N + l_t 
 }
 ```
 
