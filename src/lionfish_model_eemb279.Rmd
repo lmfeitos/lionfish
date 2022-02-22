@@ -238,7 +238,7 @@ lionfish_sum <- lionfish_long %>%
 l_inf <- 448 #(mm)
 t_0 <- 0
 k <- 0.47 # Brody growth coefficient
-c <- 0.61 # intensity of seasonal growth oscilation. Varies from 0 to 1, with zero being no seasonality and one extreme seasonality
+c <- 0.61 # intensity of seasonal growth oscillation. Varies from 0 to 1, with zero being no seasonality and one extreme seasonality
 t_s <- 0.71 # can't figure out where this value comes from but it's in the formula
 t_b <- 0.42
 season <- "yes"
@@ -246,6 +246,22 @@ var_size_age <- "variable"
 ```
 
 ### Simulation 
+
+```{r}
+# test creating a function for the model instead of a forloop
+lionfish_gr <- function(l_t) {
+  l_t <- l_inf * (1 - exp(- k * (tset - t_0) + (c * k/ 2 * pi) * sin(pi) * (tset - t_s) - (c * k / 2 * pi) * sin(pi) * (t_s))) # formula 8 of the paper
+}
+
+# subset lionfish data to include only observations from april 2013
+lionfish_ap2013 <- lionfish_long %>% 
+  filter(month == "april") %>% 
+  filter(year == "2013")
+  
+
+lionfish_gr(lionfish_ap2013$frequency)
+```
+
 
 ```{r}
 # create timeseries
@@ -262,13 +278,19 @@ for(i in 2:length(tset)) {
   N <- N.simu1[i - 1] # placeholder
   
   # calculate growth from VBGF
-  l_t <- l_inf * (1 - exp(- k * (tset - t_0) + (c * k/ 2 * pi) * sin(pi) * (tset - t_s) - (c * k / 2 * pi) * sin(pi) * (t_s))) # formula 8 of the paper
+  l_t <- l_inf * (1 - exp(- k * (tset[i] - t_0) + (c * k/ 2 * pi) * sin(pi) * (tset[i] - t_s) - (c * k / 2 * pi) * sin(pi) * (t_s))) * dt # formula 8 of the paper
   
   # total growth
   N.simu1[i] <- N + l_t 
 }
 ```
 
+```{r}
+tail(N.simu1)
+```
 
+```{r}
+plot(x = tset, y = N.simu1)
+```
 
  
