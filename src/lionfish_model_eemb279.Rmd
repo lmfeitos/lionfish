@@ -18,12 +18,6 @@ library(patchwork)
 lionfish_tl <- read.csv(here("data", "lionfish_length-frequency_data.csv"), sep = ";") %>% 
   clean_names() %>% 
   select(total_length_tl:august_2015)
-  
-
-lionfish_long <- lionfish_tl %>% 
-  pivot_longer(cols = april_2013:august_2015,
-               names_to = "year",
-               values_to = "frequency")
 ```
 
 ```{r}
@@ -137,9 +131,59 @@ lion_aug_2015 <- ggplot(data = lionfish_tl) +
   plot_annotation(tag_levels = "A")
 ```
 
+```{r data wrangling}
+# create tibble in long format and separate the original year column into month and year
+lionfish_long <- lionfish_tl %>% 
+  pivot_longer(cols = april_2013:august_2015,
+               names_to = "year",
+               values_to = "frequency") %>% 
+  separate(year, c("month", "year"), "_")
+
+# sum the frequencies per year
+lionfish_sum <- lionfish_long %>% 
+  group_by(year, total_length_tl) %>% 
+  summarise(freq_sum = sum(frequency))
+```
+
+## Parameters for the best fit model used in Johnson & Swenarton (2016)
+
+```{r}
+l_inf <- 448 #(mm)
+t_0 <- 0
+k <- 0.47 # Brody growth coefficient
+c <- 0.61 # intensity of seasonal growth oscilation. Varies from 0 to 1, with zero being no seasonality and one extreme seasonality
+t_s <- 0.71 # can't figure out where this value comes from but it's in the formula
+t_b <- 0.42
+season <- "yes"
+var_size_age <- "variable"
+```
+
+```{r}
+# create timeseries
+tset <- seq(from = 0, to = 100, length.out = 10000)
+
+# placeholder variables
+N.simu1 <- NaN*tset
+N.simu1[1] <- l_inf # this is probably wrong
+
+# create for loop
+for(i in 2:length(tset)) { 
+  dt <- tset[i] - tset[i - 1] # change in time
+  
+  N <- N.simu1[i - 1] # placeholder
+  
+  # calculate growth from VBGF
+  l_t <- l_inf * (1 - exp(- k * (tset - t_0) + (c * k/ 2 * pi) * sin(pi) * (tset - t_s) - (c * k / 2 * pi) * sin(pi) * (t_s))) # formula 8 of the paper
+  
+  # total growth
+  N.simu1[i] <- N + l_t 
+}
+```
 
 
+# Begin Cori
 
+## Plot Histograms
 
 ```{r}
 ggplot(data = lionfish_long) +
@@ -149,6 +193,8 @@ ggplot(data = lionfish_long) +
        y = "Frequency") +
   facet_wrap(~year, scales = "free")
 ```
+
+
 ## Motivation
 
 Invasive species management requires thorough understanding of life history characteristics, which can be used to model population dynamics and analyze effectiveness of various intervention strategies. Lionfish are invasive and have spread rapidly through the western Atlantic, but spatially-explicit estimates for growth rate have not been identified in many regions. This paper uses length-frequency data to estimate lionfish growth rate in one of these areas: northeast Florida. 
@@ -218,22 +264,6 @@ L_t = 448 [1-e^{-0.47t+[\frac{0.061*0.47}{2pi}]sinpi{t=0.71}]-[\frac{0.61*0.47}{
 $$
 
 
-Try a loop for different t:
-
-```{r}
-tset <- seq(0, 10, length = 10)
-Lset <- NaN*tset
-
-tset[1] <- 0
-
-for(i in 1:length(tset)){
-  t <- tset[i]
-  dt <- tset[i]- tset[i-1]
-  # need to rewrite L as dt?
-  L = 448*(1-exp^(-0.47*t+((0.61*0.47/2*3.1415)*sin(3.1415)*(t-0.71))-(0.61*0.47/2*3.1415)*sin(3.14159)*0.71))
-  Lset[i] <- L
-}
-```
 
 
-
+ 
