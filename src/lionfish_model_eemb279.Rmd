@@ -13,6 +13,10 @@ library(janitor)
 library(patchwork)
 ```
 
+# Introduction
+
+(Background and context, approximately 200 words, citing at least two additional research papers.)
+
 ## Motivation
 
 Invasive species management requires thorough understanding of life history characteristics, which can be used to model population dynamics and analyze effectiveness of various intervention strategies. Lionfish are invasive and have spread rapidly through the western Atlantic, but spatially-explicit estimates for growth rate have not been identified in many regions. This paper uses length-frequency data to estimate lionfish growth rate in one of these areas: northeast Florida. 
@@ -26,7 +30,6 @@ Invasive species management requires thorough understanding of life history char
 3. Estimate vital rates and population structure for the region - distinct cohorts were identifiable, suggesting recruitment occurs during a relatively short summer period; majority of lionfish < 2 years of age, none > 3 years of age
 
 ## Methods
-
 
 #### Sampling
 
@@ -43,25 +46,29 @@ The von Bertalanffy growth function uses length as a proxy for age. For species 
 
 $$
 \begin{align}
-Seasonalized:L_t & = L_{inf} [1-e^{-(K(t-t_0))-S(t)+S(t_0)}] \\ 
+\text{Seasonalized:} 
+\newline 
+L_t & = L_{inf} [1-e^{-(K(t-t_0))-S(t)+S(t_0)}] \\ 
 \newline
-S(t)  &= \frac{CK}{2pi}sinpi(t-t_s)
+S(t)  &= \frac{CK}{2\pi} \cdot sin \pi(t-t_s)
 \newline
-S(t_0) &= \frac{CK}{2pi}sinpi(t_0-t_s)
+S(t_0) &= \frac{CK}{2\pi} \cdot sin \pi(t_0-t_s)
 \end{align}
 $$
+
 $L_t$ = length of fish at age $t$
 $L_inf$ = asymptotic maximum length
 $K$ = Brody growth coefficient
 $t_0$ = theoretical time at which fish was length zero
 $t_s$ = seasonal growth oscillations relative to $t_0$
 $t_w = t_s + 0.5$ = winter point, time of slowest growth
-$C$ = intensity of seasonal growth oscillation, ($0 <= C <=1$ where zero = no seasonality)
+$C$ = intensity of seasonal growth oscillation, ($0 \leq C \leq 1$ where zero = no seasonality)
 
 Included measure of variance of size-at-age as a parameter, and estimated the proportion of lionfish in each age class during each sampling month and year:
+
 $$
 \begin{align}
-n_{a, i, t} = N_t  P_{a,t} P(L_{lower} <= L_i <= L_{upper} | N(\bar{L_{a,t}, sigma_a^2}))
+n_{a,i,t} = N_t \cdot P_{a,t} \cdot P(L_{lower} \leq L_i \leq L_{upper} | N(\bar{L_{a,t}},\sigma_{a}^{2}))
 \end{align}
 $$
 $N_t$ = total number of individuals captured in month $t$
@@ -77,7 +84,7 @@ Uses maximum likelihood approach to fit a predicted distribution to the length-f
 Best fit model:
 $$
 \begin{align}
-L_t = 448 [1-e^{-0.47t+[\frac{0.061*0.47}{2pi}]sinpi{t=0.71}]-[\frac{0.61*0.47}{2pi}sinpi{0.71}]}]
+L_t = 448 [1-e^{-0.47t+[\frac{0.061*0.47}{2\pi}]sin\pi(t-0.71)]-[\frac{0.61*0.47}{2\pi}sin\pi(0.71)]}]
 \end{align}
 $$
 
@@ -158,7 +165,6 @@ lion_oc_2014 <- ggplot(data = lionfish_tl) +
         axis.text = element_text(color = "black", size = 10))
 ```
 
-
 ```{r}
 lion_nov_2014 <- ggplot(data = lionfish_tl) +
   geom_col(aes(x = total_length_tl, y = november_2014)) +
@@ -181,7 +187,6 @@ lion_jan_2015 <- ggplot(data = lionfish_tl) +
         axis.text = element_text(color = "black", size = 10))
 ```
 
-
 ```{r}
 lion_aug_2015 <- ggplot(data = lionfish_tl) +
   geom_col(aes(x = total_length_tl, y = august_2015)) +
@@ -192,7 +197,6 @@ lion_aug_2015 <- ggplot(data = lionfish_tl) +
   theme(axis.title = element_text(color = "black", size = 12),
         axis.text = element_text(color = "black", size = 10))
 ```
-
 
 ```{r, fig.height=10}
 (lion_ap_2013 + lion_aug_2013) /
@@ -232,65 +236,66 @@ lionfish_sum <- lionfish_long %>%
   summarise(freq_sum = sum(frequency))
 ```
 
-### Parameters for the best fit model used in Johnson & Swenarton (2016)
+### Replicating the best fit model used in Johnson & Swenarton (2016)
+
+## Figure 4
 
 ```{r}
-l_inf <- 448 #(mm)
-t_0 <- 0
-k <- 0.47 # Brody growth coefficient
-c <- 0.61 # intensity of seasonal growth oscillation. Varies from 0 to 1, with zero being no seasonality and one extreme seasonality
-t_s <- 0.71 # can't figure out where this value comes from but it's in the formula
-t_b <- 0.42
-season <- "yes"
-var_size_age <- "variable"
-```
+# Parameters 
+l_inf = 448 # asymptotic maximum length
+k = 0.47    # Brody growth coefficient
+c = 0.61    # intensity of seasonal growth oscillation. 
+               # varies from 0 to 1, with zero being no seasonality 
+               # and one extreme seasonality
+t_0 = 0    # theoretical time when fish was length zero
+t_s = 0.71 # timing of seasonal growth oscillation...
+              # slowest growth is at winter point, tw = ts + 0.5
 
-### Simulation 
+# Set up loop to iterate model across time/age
+tset <- seq(from = 0, to = 4, length.out = 1000)
+lf <- data.frame(tset, lengths = NaN*tset)
 
-```{r}
-# test creating a function for the model instead of a forloop
-lionfish_gr <- function(l_t) {
-  l_t <- l_inf * (1 - exp(- k * (tset - t_0) + (c * k/ 2 * pi) * sin(pi) * (tset - t_s) - (c * k / 2 * pi) * sin(pi) * (t_s))) # formula 8 of the paper
+for(i in 1:length(tset)){
+  t <- tset[i]
+  l_t <- l_inf*(1-exp(-k*(t-t_0)+(((c*k)/(2*pi))*sinpi(t-t_s))-(((c*k)/(2*pi))*sinpi(t_s))))
+  lf$lengths[i] <- l_t
 }
 
-# subset lionfish data to include only observations from april 2013
-lionfish_ap2013 <- lionfish_long %>% 
-  filter(month == "april") %>% 
-  filter(year == "2013")
-  
-
-lionfish_gr(lionfish_ap2013$frequency)
+# Plot the model output
+ggplot() +
+  geom_line(data = lf,
+            aes(x = tset, y = lengths)) +
+  labs(x = "Age (Years)",
+       y = "Total Length (mm)") +
+  theme_classic()
 ```
 
+##  Figure 3
+
+Now need to try to use the growth to estmiate the population structure
 
 ```{r}
-# create timeseries
-tset <- seq(from = 0, to = 100, length.out = 10000)
+# Set up new, simpler model for testing
+tset <- seq(from = 0, to = 4, length.out = 50)
+lf_simple <- data.frame(tset, lengths = NaN*tset)
 
-# placeholder variables
-N.simu1 <- NaN*tset
-N.simu1[1] <- l_inf # this is probably wrong
-
-# create for loop
-for(i in 2:length(tset)) { 
-  dt <- tset[i] - tset[i - 1] # change in time
-  
-  N <- N.simu1[i - 1] # placeholder
-  
-  # calculate growth from VBGF
-  l_t <- l_inf * (1 - exp(- k * (tset[i] - t_0) + (c * k/ 2 * pi) * sin(pi) * (tset[i] - t_s) - (c * k / 2 * pi) * sin(pi) * (t_s))) * dt # formula 8 of the paper
-  
-  # total growth
-  N.simu1[i] <- N + l_t 
+for(i in 1:length(tset)){
+  t <- tset[i]
+  l_t <- l_inf*(1-exp(-k*(t-t_0)+(((c*k)/(2*pi))*sinpi(t-t_s))-(((c*k)/(2*pi))*sinpi(t_s))))
+  lf_simple$lengths[i] <- l_t
 }
-```
 
-```{r}
-tail(N.simu1)
-```
 
-```{r}
-plot(x = tset, y = N.simu1)
+for(i in 1:length(lf_simple$lengths)){
+  L <- lf_simple$lengths[i]
+
+  dist <- dnorm(lf$tset, mean = L, sd = 26.47)
+  n <- 
+}
+
+N_t   = 
+n = N_t * P_at * P *(bounds | dnorm(L_t, sd))
+
 ```
 
  
