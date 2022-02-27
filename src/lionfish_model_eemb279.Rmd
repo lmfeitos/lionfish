@@ -21,7 +21,7 @@ library(patchwork)
 
 Invasive species management requires thorough understanding of life history characteristics, which can be used to model population dynamics and analyze effectiveness of various intervention strategies. Lionfish are invasive and have spread rapidly through the western Atlantic, but spatially-explicit estimates for growth rate have not been identified in many regions. This paper uses length-frequency data to estimate lionfish growth rate in one of these areas: northeast Florida. 
 
-## Key Goals & Findings:
+## Paper's Key Goals & Findings:
 
 1. Develop length-based model to estimate age, growth, and population structure - found rapid growth with seasonal variation
 
@@ -87,17 +87,31 @@ $$
 L_t = 448 [1-e^{-0.47t+[\frac{0.061*0.47}{2\pi}]sin\pi(t-0.71)]-[\frac{0.61*0.47}{2\pi}sin\pi(0.71)]}]
 \end{align}
 $$
-
 ## Replication
 
-### Length-Frequency Histograms:
+### Data Processing
 
 ```{r}
-# read in the data
 lionfish_tl <- read.csv(here("data", "lionfish_length-frequency_data.csv"), sep = ";") %>% 
   clean_names() %>% 
   select(total_length_tl:august_2015)
+
+# Create tibble in long format and separate the original year column into month and year
+lionfish_long <- lionfish_tl %>% 
+  pivot_longer(cols = april_2013:august_2015,
+               names_to = "year",
+               values_to = "frequency") %>% 
+  separate(year, c("month", "year"), "_")
+
+# Sum the frequencies per year
+lionfish_sum <- lionfish_long %>% 
+  group_by(year, total_length_tl) %>% 
+  summarise(freq_sum = sum(frequency))
+
 ```
+
+### Length-Frequency Histograms:
+
 
 ```{r}
 lion_ap_2013 <- ggplot(data = lionfish_tl) +
@@ -207,7 +221,7 @@ lion_aug_2015 <- ggplot(data = lionfish_tl) +
   plot_annotation(tag_levels = "A")
 ```
 
-##### Alternative: ggplot + facet_wrap()
+##### Cleaner Alternative: ggplot + facet_wrap()
 
 ```{r}
 ggplot(data = lionfish_long) +
@@ -219,26 +233,9 @@ ggplot(data = lionfish_long) +
 ```
 
 
+## Replicating the best fit model used in Johnson & Swenarton (2016)
 
-### Some Wrangling
-
-```{r data wrangling}
-# create tibble in long format and separate the original year column into month and year
-lionfish_long <- lionfish_tl %>% 
-  pivot_longer(cols = april_2013:august_2015,
-               names_to = "year",
-               values_to = "frequency") %>% 
-  separate(year, c("month", "year"), "_")
-
-# sum the frequencies per year
-lionfish_sum <- lionfish_long %>% 
-  group_by(year, total_length_tl) %>% 
-  summarise(freq_sum = sum(frequency))
-```
-
-### Replicating the best fit model used in Johnson & Swenarton (2016)
-
-## Figure 4
+### Figure 4
 
 ```{r}
 # Parameters 
@@ -252,7 +249,7 @@ t_s = 0.71 # timing of seasonal growth oscillation...
               # slowest growth is at winter point, tw = ts + 0.5
 
 # Set up loop to iterate model across time/age
-tset <- seq(from = 0, to = 4, length.out = 1000)
+tset <- seq(from = 0, to = 4, by = 0.001)
 lf <- data.frame(tset, lengths = NaN*tset)
 
 for(i in 1:length(tset)){
@@ -272,30 +269,39 @@ ggplot() +
 
 ##  Figure 3
 
-Now need to try to use the growth to estmiate the population structure
+Now need to try to use the growth to estmiate the age structure of the population:
+
 
 ```{r}
-# Set up new, simpler model for testing
-tset <- seq(from = 0, to = 4, length.out = 50)
-lf_simple <- data.frame(tset, lengths = NaN*tset)
+# Starting age structure,
+lf_ap13 <- lionfish_long %>% 
+  filter(month == "april" & year == "2013") %>% 
+  uncount(frequency) %>% 
+  select(total_length_tl) %>% 
+  rename(starting_length = total_length_tl) 
 
-for(i in 1:length(tset)){
-  t <- tset[i]
+# Create table of age-length relationships
+# (Nice alternative to solving the model for length)
+lf_nice <- lf %>%  
+  mutate(length_round = round(lengths, digits = 0))%>% 
+  group_by(length_round) %>% 
+  slice(1) %>% 
+  ungroup()
+
+lf_ap13$t_start <- NaN*length(lf_ap13)
+
+for(i in 1:length(lf_ap13$starting_length)){
+  lf_ap13$t_start[i] <- lf_nice$tset[lf_nice$length_round == lf_ap13$starting_length[i]]
+}
+
+lfGrowth <- function(length){
+  t <- lf_nice$tset[length$round == length]
   l_t <- l_inf*(1-exp(-k*(t-t_0)+(((c*k)/(2*pi))*sinpi(t-t_s))-(((c*k)/(2*pi))*sinpi(t_s))))
-  lf_simple$lengths[i] <- l_t
 }
 
-
-for(i in 1:length(lf_simple$lengths)){
-  L <- lf_simple$lengths[i]
-
-  dist <- dnorm(lf$tset, mean = L, sd = 26.47)
-  n <- 
-}
-
-N_t   = 
-n = N_t * P_at * P *(bounds | dnorm(L_t, sd))
 
 ```
 
- 
+
+
+
