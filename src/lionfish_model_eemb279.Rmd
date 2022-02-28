@@ -269,7 +269,7 @@ ggplot() +
 
 ##  Figure 3
 
-Now need to try to use the growth to estmiate the age structure of the population:
+Now need to try to use the growth to estimate the age structure of the population:
 
 
 ```{r}
@@ -303,5 +303,66 @@ lfGrowth <- function(length){
 ```
 
 
+
+### Figure 4 - Model extension Leo
+
+```{r}
+# Parameters 
+l_inf = 448 # asymptotic maximum length
+k = 0.47    # Brody growth coefficient
+c = 0.61    # intensity of seasonal growth oscillation. 
+               # varies from 0 to 1, with zero being no seasonality 
+               # and one extreme seasonality
+t_0 = 0    # theoretical time when fish was length zero
+t_s = 0.71 # timing of seasonal growth oscillation...
+              # slowest growth is at winter point, tw = ts + 0.5
+
+# Values of temperature for each location
+# Maranhão
+t_m = 28
+
+# Fernando de Noronha
+t_fn = 27
+
+# Rio de Janeiro
+t_rj = 25
+
+# Set up loop to iterate model across time/age
+tset <- seq(from = 0, to = 4, by = 0.001)
+lf <- data.frame(tset, lengths = NaN*tset)
+lf_m <- data.frame(tset, lengths = NaN*tset)
+lf_fn <- data.frame(tset, lengths = NaN*tset)
+lf_rj <- data.frame(tset, lengths = NaN*tset)
+for(i in 1:length(tset)){
+  t <- tset[i]
+  
+  l_t <- l_inf*(1-exp(-k*(t-t_0)+(((c*k)/(2*pi))*sinpi(t-t_s))-(((c*k)/(2*pi))*sinpi(t_s))))
+  l_t_m <- l_inf*t_m* (1-exp(-k*(t-t_0)+(((c*k)/(2*pi))*sinpi(t-t_s))-(((c*k)/(2*pi))*sinpi(t_s))))
+  l_t_fn <- l_inf*t_fn* (1-exp(-k*(t-t_0)+(((c*k)/(2*pi))*sinpi(t-t_s))-(((c*k)/(2*pi))*sinpi(t_s))))
+  l_t_rj <- l_inf*t_rj* (1-exp(-k*(t-t_0)+(((c*k)/(2*pi))*sinpi(t-t_s))-(((c*k)/(2*pi))*sinpi(t_s))))
+  
+  lf$lengths[i] <- l_t
+  lf_m$lengths[i] <- l_t_m
+  lf_fn$lengths[i] <- l_t_fn
+  lf_rj$lengths[i] <- l_t_rj
+}
+
+# Plot the model output
+ggplot() +
+  geom_line(data = lf,
+            aes(x = tset, y = lengths)) +
+  geom_line(data = lf_m,
+            aes(x = tset, y = lengths),
+            color = "coral2") +
+  geom_line(data = lf_fn,
+            aes(x = tset, y = lengths),
+            color = "blue4") +
+  geom_line(data = lf_rj,
+            aes(x = tset, y = lengths),
+            color = "goldenrod2") +
+  labs(x = "Age (Years)",
+       y = "Total Length (mm)") +
+  theme_classic()
+```
 
 
