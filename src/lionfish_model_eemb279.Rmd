@@ -17,7 +17,7 @@ library(patchwork)
 
 # Introduction
 
-(Background and context, approximately 200 words, citing at least two additional research papers.)
+The paper we analyzed in this project consists of the calculations of growth for the lionfish (*Pterois volitans/miles*) in Northeastern Florida. Lionfish are an invasive species in the Caribbean and has caused substantial harms to both the regional biological community and the people who rely on coral reefs for economic subsistence (Albins, 2015; Albins & Hixon, 2013). While growth curves for this species have been generated throughout the region independently (Akins et al., 2014; Rodríguez-Cortés, 2015), the paper we analyzed does it in a very local scale within a limited time frame (2013-2015).
 
 # Citation
 
@@ -351,5 +351,12 @@ ggplot(data = lf_sim) +
 ```
 
 
+### Citations
 
+Akins, J. L., Morris Jr, J. A., & Green, S. J. (2014). In situ tagging technique for fishes provides insight into growth and movement of invasive lionfish. Ecology and Evolution, 4(19), 3768–3777. https://doi.org/10.1002/ece3.1171
 
+Albins, M. A. (2015). Invasive Pacific lionfish Pterois volitans reduce abundance and species richness of native Bahamian coral-reef fishes. Marine Ecology Progress Series, 522, 231–243. https://doi.org/10.3354/meps11159
+
+Albins, M. A., & Hixon, M. A. (2013). Worst case scenario: Potential long-term effects of invasive predatory lionfish (Pterois volitans) on Atlantic and Caribbean coral-reef communities. Environmental Biology of Fishes, 96(10), 1151–1157. https://doi.org/10.1007/s10641-011-9795-1
+
+Rodríguez-Cortés, K. D. (2015). Growth and mortality of red lionfish, Pterois volitans (Actinopterygii: Scorpaeniformes: Scorpaenidae), in the Parque Nacional Arrecife Alacranes, southern Gulf of Mexico, as determined by size-frequency analysis. Acta Ichthyologica et Piscatoria, 45(2), 175–179. https://doi.org/10.3750/AIP2015.45.2.07
