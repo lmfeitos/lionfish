@@ -6,7 +6,9 @@ output: html_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = TRUE,
+                      warning = FALSE,
+                      message = FALSE)
 library(tidyverse)
 library(here)
 library(janitor)
@@ -16,6 +18,11 @@ library(patchwork)
 # Introduction
 
 (Background and context, approximately 200 words, citing at least two additional research papers.)
+
+# Citation
+
+House, C., Redmond, D. & Phillips, M. R. An assessment of the efficiency and ecological representativity of existing marine reserve networks in Wales, UK. Ocean & Coastal Management 149, 217–230 (2017).
+
 
 ## Motivation
 
@@ -92,9 +99,10 @@ $$
 ### Data Processing
 
 ```{r}
+# Read length data
 lionfish_tl <- read.csv(here("data", "lionfish_length-frequency_data.csv"), sep = ";") %>% 
   clean_names() %>% 
-  select(total_length_tl:august_2015)
+  select(total_length_tl:august_2015) # remove some random extra empty columns
 
 # Create tibble in long format and separate the original year column into month and year
 lionfish_long <- lionfish_tl %>% 
@@ -113,7 +121,7 @@ lionfish_sum <- lionfish_long %>%
 ### Length-Frequency Histograms:
 
 
-```{r}
+```{r, include = FALSE}
 lion_ap_2013 <- ggplot(data = lionfish_tl) +
   geom_col(aes(x = total_length_tl, y = april_2013)) +
   labs(x = "",
@@ -124,7 +132,7 @@ lion_ap_2013 <- ggplot(data = lionfish_tl) +
         axis.text = element_text(color = "black", size = 10))
 ```
 
-```{r}
+```{r, include = FALSE}
 lion_aug_2013 <- ggplot(data = lionfish_tl) +
   geom_col(aes(x = total_length_tl, y = august_2013)) +
   labs(x = "",
@@ -135,7 +143,7 @@ lion_aug_2013 <- ggplot(data = lionfish_tl) +
         axis.text = element_text(color = "black", size = 10))
 ```
 
-```{r}
+```{r, include = FALSE}
 lion_ap_2014 <- ggplot(data = lionfish_tl) +
   geom_col(aes(x = total_length_tl, y = april_2014)) +
   labs(x = "",
@@ -146,7 +154,7 @@ lion_ap_2014 <- ggplot(data = lionfish_tl) +
         axis.text = element_text(color = "black", size = 10))
 ```
 
-```{r}
+```{r, include = FALSE}
 lion_jul_2014 <- ggplot(data = lionfish_tl) +
   geom_col(aes(x = total_length_tl, y = july_2014)) +
   labs(x = "",
@@ -157,7 +165,7 @@ lion_jul_2014 <- ggplot(data = lionfish_tl) +
         axis.text = element_text(color = "black", size = 10))
 ```
 
-```{r}
+```{r, include = FALSE}
 lion_aug_2014 <- ggplot(data = lionfish_tl) +
   geom_col(aes(x = total_length_tl, y = august_2014)) +
   labs(x = "",
@@ -168,7 +176,7 @@ lion_aug_2014 <- ggplot(data = lionfish_tl) +
         axis.text = element_text(color = "black", size = 10))
 ```
 
-```{r}
+```{r, include = FALSE}
 lion_oc_2014 <- ggplot(data = lionfish_tl) +
   geom_col(aes(x = total_length_tl, y = october_2014)) +
   labs(x = "",
@@ -179,7 +187,7 @@ lion_oc_2014 <- ggplot(data = lionfish_tl) +
         axis.text = element_text(color = "black", size = 10))
 ```
 
-```{r}
+```{r, include = FALSE}
 lion_nov_2014 <- ggplot(data = lionfish_tl) +
   geom_col(aes(x = total_length_tl, y = november_2014)) +
   labs(x = "",
@@ -190,7 +198,7 @@ lion_nov_2014 <- ggplot(data = lionfish_tl) +
         axis.text = element_text(color = "black", size = 10))
 ```
 
-```{r}
+```{r, include = FALSE}
 lion_jan_2015 <- ggplot(data = lionfish_tl) +
   geom_col(aes(x = total_length_tl, y = january_2015)) +
   labs(x = "",
@@ -201,7 +209,7 @@ lion_jan_2015 <- ggplot(data = lionfish_tl) +
         axis.text = element_text(color = "black", size = 10))
 ```
 
-```{r}
+```{r, include = FALSE}
 lion_aug_2015 <- ggplot(data = lionfish_tl) +
   geom_col(aes(x = total_length_tl, y = august_2015)) +
   labs(x = "",
@@ -212,7 +220,7 @@ lion_aug_2015 <- ggplot(data = lionfish_tl) +
         axis.text = element_text(color = "black", size = 10))
 ```
 
-```{r, fig.height=10}
+```{r, fig.height=10, include = FALSE}
 (lion_ap_2013 + lion_aug_2013) /
   (lion_ap_2014 + lion_jul_2014) /
   (lion_aug_2014 + lion_oc_2014) /
@@ -221,7 +229,6 @@ lion_aug_2015 <- ggplot(data = lionfish_tl) +
   plot_annotation(tag_levels = "A")
 ```
 
-##### Cleaner Alternative: ggplot + facet_wrap()
 
 ```{r}
 ggplot(data = lionfish_long) +
@@ -288,18 +295,59 @@ lf_nice <- lf %>%
   slice(1) %>% 
   ungroup()
 
-lf_ap13$t_start <- NaN*length(lf_ap13)
+lf_sim <- data.frame(start_l = lf_ap13$starting_length,
+                     start_a    = NaN*length(lf_ap13),
+                     a_1 = NaN*length(lf_ap13),
+                     l_1 = NaN*length(lf_ap13),
+                     a_2 = NaN*length(lf_ap13),
+                     l_2 = NaN*length(lf_ap13), 
+                     a_3 = NaN*length(lf_ap13),
+                     l_3 = NaN*length(lf_ap13),
+                     a_4 = NaN*length(lf_ap13),
+                     l_4 = NaN*length(lf_ap13))
 
-for(i in 1:length(lf_ap13$starting_length)){
-  lf_ap13$t_start[i] <- lf_nice$tset[lf_nice$length_round == lf_ap13$starting_length[i]]
+# Test out first as a loop
+for(i in 1:length(lf_sim$start_l)){
+    # Starting Age/Length
+    a <- lf_nice$tset[lf_nice$length_round == lf_sim$start_l[i]] 
+    lf_sim$start_a[i] <- a
+    
+    # 1-yr Age/Length
+    t <- a + 1
+    lf_sim$a_1[i] <- t
+    lf_sim$l_1[i] <- l_inf*(1-exp(-k*(t-t_0)+(((c*k)/(2*pi))*sinpi(t-t_s))-(((c*k)/(2*pi))*sinpi(t_s))))
+    
+    # 2-yr Age/Length
+    t <- t + 1
+    lf_sim$a_2[i] <- t
+    lf_sim$l_2[i] <- l_inf*(1-exp(-k*(t-t_0)+(((c*k)/(2*pi))*sinpi(t-t_s))-(((c*k)/(2*pi))*sinpi(t_s))))
+   
+    # 3-yr Age/Length
+    t <- t + 1
+    lf_sim$a_3[i] <- t
+    lf_sim$l_3[i] <- l_inf*(1-exp(-k*(t-t_0)+(((c*k)/(2*pi))*sinpi(t-t_s))-(((c*k)/(2*pi))*sinpi(t_s))))
+    
+    # 3-yr Age/Length
+    t <- t + 1
+    lf_sim$a_4[i] <- t
+    lf_sim$l_4[i] <- l_inf*(1-exp(-k*(t-t_0)+(((c*k)/(2*pi))*sinpi(t-t_s))-(((c*k)/(2*pi))*sinpi(t_s))))
 }
 
-lfGrowth <- function(length){
-  t <- lf_nice$tset[length$round == length]
-  l_t <- l_inf*(1-exp(-k*(t-t_0)+(((c*k)/(2*pi))*sinpi(t-t_s))-(((c*k)/(2*pi))*sinpi(t_s))))
-}
+
+  
+# Works!
+ggplot(data = lf_sim) +
+  geom_histogram(aes(x = start_l, fill = "April 2013"), alpha = 0.5)+
+  geom_histogram(aes(x = l_1, fill = "April 2013 aged to April 2014"), alpha = 0.5) +
+  geom_histogram(aes(x = l_2, fill = "April 2013 aged to April 2015"), alpha = 0.5) +
+  geom_histogram(aes(x = l_3, fill = "April 2013 aged to April 2016"), alpha = 0.5) +
+  geom_histogram(aes(x = l_4, fill = "April 2013 aged to April 2017"), alpha = 0.5) +
+  labs(x = "length", y = "frequency", fill = NULL) +
+  theme_classic()
 
 
+
+# Next step: write as a function for ease at populating time steps? Or nested time step
 ```
 
 
