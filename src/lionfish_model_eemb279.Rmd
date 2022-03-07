@@ -19,16 +19,14 @@ library(patchwork)
 
 (Background and context, approximately 200 words, citing at least two additional research papers.)
 
-# Citation
-
-House, C., Redmond, D. & Phillips, M. R. An assessment of the efficiency and ecological representativity of existing marine reserve networks in Wales, UK. Ocean & Coastal Management 149, 217–230 (2017).
 
 
-## Motivation
+
+### Motivation
 
 Invasive species management requires thorough understanding of life history characteristics, which can be used to model population dynamics and analyze effectiveness of various intervention strategies. Lionfish are invasive and have spread rapidly through the western Atlantic, but spatially-explicit estimates for growth rate have not been identified in many regions. This paper uses length-frequency data to estimate lionfish growth rate in one of these areas: northeast Florida. 
 
-## Paper's Key Goals & Findings:
+### Paper's Key Goals & Findings:
 
 1. Develop length-based model to estimate age, growth, and population structure - found rapid growth with seasonal variation
 
@@ -36,18 +34,14 @@ Invasive species management requires thorough understanding of life history char
 
 3. Estimate vital rates and population structure for the region - distinct cohorts were identifiable, suggesting recruitment occurs during a relatively short summer period; majority of lionfish < 2 years of age, none > 3 years of age
 
-## Methods
-
-#### Sampling
+### Sampling
 
 Sampling occured from 2013-2015 during "lionfish roundup" tournaments and other opportunistic sampling via spearfishing. In the lab, lionfish were measured for standard and total length, weighed, and sexed. The authors retrieved otoliths from 100 lionfish to determine age directly. 
-
-#### Model Creation
 
 - Length-frequency histograms were used for lengths 0-450mm in 10mm increments.
 - Only used data from 2014 due to temporal resolution
 
-About the model:
+## Model Presentation
 
 The von Bertalanffy growth function uses length as a proxy for age. For species which experience seasonal temperature variations, such as temperate lionfish, the seasonalized version of this function is often most appropriate:
 
@@ -86,7 +80,7 @@ $N(\bar{L_{a,t}}, sigma_a)$ = normal probability density function with mean leng
 Size distributions overlap across ages, so total expected fish of size $i$ in month $t$ calculated by summing expected contributions to size class $i$ from each age:
 $N_{i,t} = \sum_{a=0}^{3}n_{i,a,t}$
 
-Uses maximum likelihood approach to fit a predicted distribution to the length-frequency histogram - length is a proxy for age, so the model estimates the proportion of fish of a given size in each age class. 
+The authors used maximum likelihood approach to fit a predicted distribution to the length-frequency histograms from the samples. Length is a proxy for age, so the model estimates the proportion of fish of a given size in each age class. 
 
 Best fit model:
 $$
@@ -94,6 +88,16 @@ $$
 L_t = 448 [1-e^{-0.47t+[\frac{0.061*0.47}{2\pi}]sin\pi(t-0.71)]-[\frac{0.61*0.47}{2\pi}sin\pi(0.71)]}]
 \end{align}
 $$
+## Assumptions
+
+For length model:
+- Normal distriution of length
+- Population consists of four age classes, reach maximum length of 448mm
+- The samples collected are reflective of the age-length distribution of the entire population
+
+For distribution:
+- Recruitment occurs in single event 
+
 ## Replication
 
 ### Data Processing
@@ -350,6 +354,8 @@ ggplot(data = lf_sim) +
 # Next step: write as a function for ease at populating time steps? Or nested time step
 ```
 
+# Citations
 
+House, C., Redmond, D. & Phillips, M. R. An assessment of the efficiency and ecological representativity of existing marine reserve networks in Wales, UK. Ocean & Coastal Management 149, 217–230 (2017).
 
 
