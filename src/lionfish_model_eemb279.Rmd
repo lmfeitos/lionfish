@@ -232,6 +232,30 @@ ggplot(data = lionfish_long) +
   facet_wrap(~year, scales = "free")
 ```
 
+```{r parameters}
+l_inf = 448 # asymptotic maximum length
+k = 0.47    # Brody growth coefficient
+c = 0.61    # intensity of seasonal growth oscillation. 
+               # varies from 0 to 1, with zero being no seasonality 
+               # and one extreme seasonality
+t_0 = 0    # theoretical time when fish was length zero
+t_s = 0.71 # timing of seasonal growth oscillation...
+              # slowest growth is at winter point, tw = ts + 0.5
+
+# Values of temperature for each location
+# Maranhão
+t_m = 25  # Moura et al (2016)
+
+# Fernando de Noronha
+t_fn = 24 # Prazeres et al (2012)
+
+# Rio de Janeiro
+t_rj = 23 # Lima & Coutinho (2016)
+
+# Northeast Florida
+t_fl = 22.5 # based on monthly averages for Jacksonville obtained from https://seatemperature.info/jacksonville-water-temperature.html 
+
+```
 
 ## Replicating the best fit model used in Johnson & Swenarton (2016)
 
@@ -288,45 +312,297 @@ lf_nice <- lf %>%
   slice(1) %>% 
   ungroup()
 
-lf_ap13$t_start <- NaN*length(lf_ap13)
+lf_sim <- data.frame(start_l = lf_ap13$starting_length,
+                     start_a    = NaN*length(lf_ap13),
+                     a_1 = NaN*length(lf_ap13),
+                     l_1 = NaN*length(lf_ap13),
+                     a_2 = NaN*length(lf_ap13),
+                     l_2 = NaN*length(lf_ap13), 
+                     a_3 = NaN*length(lf_ap13),
+                     l_3 = NaN*length(lf_ap13),
+                     a_4 = NaN*length(lf_ap13),
+                     l_4 = NaN*length(lf_ap13))
 
-for(i in 1:length(lf_ap13$starting_length)){
-  lf_ap13$t_start[i] <- lf_nice$tset[lf_nice$length_round == lf_ap13$starting_length[i]]
+# Test out first as a loop
+for(i in 1:length(lf_sim$start_l)){
+    # Starting Age/Length
+    a <- lf_nice$tset[lf_nice$length_round == lf_sim$start_l[i]] 
+    lf_sim$start_a[i] <- a
+    
+    # 1-yr Age/Length
+    t <- a + 1
+    lf_sim$a_1[i] <- t
+    lf_sim$l_1[i] <- l_inf*(1-exp(-k*(t-t_0)+(((c*k)/(2*pi))*sinpi(t-t_s))-(((c*k)/(2*pi))*sinpi(t_s))))
+    
+    # 2-yr Age/Length
+    t <- t + 1
+    lf_sim$a_2[i] <- t
+    lf_sim$l_2[i] <- l_inf*(1-exp(-k*(t-t_0)+(((c*k)/(2*pi))*sinpi(t-t_s))-(((c*k)/(2*pi))*sinpi(t_s))))
+   
+    # 3-yr Age/Length
+    t <- t + 1
+    lf_sim$a_3[i] <- t
+    lf_sim$l_3[i] <- l_inf*(1-exp(-k*(t-t_0)+(((c*k)/(2*pi))*sinpi(t-t_s))-(((c*k)/(2*pi))*sinpi(t_s))))
+    
+    # 3-yr Age/Length
+    t <- t + 1
+    lf_sim$a_4[i] <- t
+    lf_sim$l_4[i] <- l_inf*(1-exp(-k*(t-t_0)+(((c*k)/(2*pi))*sinpi(t-t_s))-(((c*k)/(2*pi))*sinpi(t_s))))
 }
 
-lfGrowth <- function(length){
-  t <- lf_nice$tset[length$round == length]
-  l_t <- l_inf*(1-exp(-k*(t-t_0)+(((c*k)/(2*pi))*sinpi(t-t_s))-(((c*k)/(2*pi))*sinpi(t_s))))
-}
 
+  
+# Works!
+ggplot(data = lf_sim) +
+  geom_histogram(aes(x = start_l, fill = "April 2013"), alpha = 0.5)+
+  geom_histogram(aes(x = l_1, fill = "April 2013 aged to April 2014"), alpha = 0.5) +
+  geom_histogram(aes(x = l_2, fill = "April 2013 aged to April 2015"), alpha = 0.5) +
+  geom_histogram(aes(x = l_3, fill = "April 2013 aged to April 2016"), alpha = 0.5) +
+  geom_histogram(aes(x = l_4, fill = "April 2013 aged to April 2017"), alpha = 0.5) +
+  labs(x = "length", y = "frequency", fill = NULL) +
+  theme_classic()
+```
+
+
+## Model extension 
+
+### Figure 3
+
+```{r}
+# Starting age structure,
+lf_ap13 <- lionfish_long %>% 
+  filter(month == "april" & year == "2013") %>% 
+  uncount(frequency) %>% 
+  select(total_length_tl) %>% 
+  rename(starting_length = total_length_tl) 
+
+# Create table of age-length relationships
+# (Nice alternative to solving the model for length)
+lf_nice <- lf %>%  
+  mutate(length_round = round(lengths, digits = 0))%>% 
+  group_by(length_round) %>% 
+  slice(1) %>% 
+  ungroup()
+```
+
+```{r for loop for florida}
+lf_sim_fl <- data.frame(start_l_fl = lf_ap13$starting_length,
+                     start_a_fl  = NaN*length(lf_ap13),
+                     a_1_fl = NaN*length(lf_ap13),
+                     l_1_fl = NaN*length(lf_ap13),
+                     a_2_fl = NaN*length(lf_ap13),
+                     l_2_fl = NaN*length(lf_ap13), 
+                     a_3_fl = NaN*length(lf_ap13),
+                     l_3_fl = NaN*length(lf_ap13),
+                     a_4_fl = NaN*length(lf_ap13),
+                     l_4_fl = NaN*length(lf_ap13))
+
+# Test out first as a loop
+for(i in 1:length(lf_sim_fl$start_l_fl)){
+    # Starting Age/Length
+    a_fl <- lf_nice$tset[lf_nice$length_round == lf_sim_fl$start_l_fl[i]] 
+    lf_sim_fl$start_a[i] <- a_fl
+    
+    # 1-yr Age/Length
+    t_flo <- a_fl + 1
+    lf_sim_fl$a_1_fl[i] <- t_flo
+    lf_sim_fl$l_1_fl[i] <- l_inf*t_fl*(1-exp(-k*(t-t_0)+(((c*k)/(2*pi))*sinpi(t-t_s))-(((c*k)/(2*pi))*sinpi(t_s))))
+    
+    # 2-yr Age/Length
+    t_flo <- t_flo + 1
+    lf_sim_fl$a_2_fl[i] <- t_flo
+    lf_sim_fl$l_2_fl[i] <- l_inf*t_fl*(1-exp(-k*(t-t_0)+(((c*k)/(2*pi))*sinpi(t-t_s))-(((c*k)/(2*pi))*sinpi(t_s))))
+   
+    # 3-yr Age/Length
+    t_flo <- t_flo + 1
+    lf_sim_fl$a_3_fl[i] <- t_flo
+    lf_sim_fl$l_3_fl[i] <- l_inf*t_fl*(1-exp(-k*(t-t_0)+(((c*k)/(2*pi))*sinpi(t-t_s))-(((c*k)/(2*pi))*sinpi(t_s))))
+    
+    # 3-yr Age/Length
+    t_flo <- t_flo + 1
+    lf_sim_fl$a_4_fl[i] <- t_flo
+    lf_sim_fl$l_4_fl[i] <- l_inf* t_fl*(1-exp(-k*(t-t_0)+(((c*k)/(2*pi))*sinpi(t-t_s))-(((c*k)/(2*pi))*sinpi(t_s))))
+}
 
 ```
 
+
+```{r for loop for maranhao}
+lf_sim_m <- data.frame(start_l_m = lf_ap13$starting_length,
+                     start_a_m = NaN*length(lf_ap13),
+                     a_1_m = NaN*length(lf_ap13),
+                     l_1_m = NaN*length(lf_ap13),
+                     a_2_m = NaN*length(lf_ap13),
+                     l_2_m = NaN*length(lf_ap13), 
+                     a_3_m = NaN*length(lf_ap13),
+                     l_3_m = NaN*length(lf_ap13),
+                     a_4_m = NaN*length(lf_ap13),
+                     l_4_m = NaN*length(lf_ap13),
+                     region = NaN*length(lf_ap13))
+
+for(i in 1:length(lf_sim_m$start_l_m)){
+    # Starting Age/Length
+    a_m <- lf_nice$tset[lf_nice$length_round == lf_sim_m$start_l_m[i]] 
+    lf_sim_m$start_a_m[i] <- a_m
+    
+    # 1-yr Age/Length
+    t <- a_m + 1
+    lf_sim_m$a_1_m[i] <- t
+    lf_sim_m$l_1_m[i] <- l_inf* t_m *(1-exp(-k*(t-t_0)+(((c*k)/(2*pi))*sinpi(t-t_s))-(((c*k)/(2*pi))*sinpi(t_s))))
+    
+    # 2-yr Age/Length
+    t <- t + 1
+    lf_sim_m$a_2_m[i] <- t
+    lf_sim_m$l_2_m[i] <- l_inf*t_m *(1-exp(-k*(t-t_0)+(((c*k)/(2*pi))*sinpi(t-t_s))-(((c*k)/(2*pi))*sinpi(t_s))))
+   
+    # 3-yr Age/Length
+    t <- t + 1
+    lf_sim_m$a_3_m[i] <- t
+    lf_sim_m$l_3_m[i] <- l_inf*t_m *(1-exp(-k*(t-t_0)+(((c*k)/(2*pi))*sinpi(t-t_s))-(((c*k)/(2*pi))*sinpi(t_s))))
+    
+    # 3-yr Age/Length
+    t <- t + 1
+    lf_sim_m$a_4_m[i] <- t
+    lf_sim_m$l_4_m[i] <- l_inf*t_m *(1-exp(-k*(t-t_0)+(((c*k)/(2*pi))*sinpi(t-t_s))-(((c*k)/(2*pi))*sinpi(t_s))))
+    
+    # add region to the df
+    region <- t + 1
+    lf_sim_m$region[i] <- c("MA")
+}
+
+```
+
+```{r for loop for noronha}
+lf_sim_fn <- data.frame(start_l_fn = lf_ap13$starting_length,
+                     start_a_fn = NaN*length(lf_ap13),
+                     a_1_fn = NaN*length(lf_ap13),
+                     l_1_fn = NaN*length(lf_ap13),
+                     a_2_fn = NaN*length(lf_ap13),
+                     l_2_fn = NaN*length(lf_ap13), 
+                     a_3_fn = NaN*length(lf_ap13),
+                     l_3_fn = NaN*length(lf_ap13),
+                     a_4_fn = NaN*length(lf_ap13),
+                     l_4_fn = NaN*length(lf_ap13),
+                     region = NaN*length(lf_ap13))
+
+for(i in 1:length(lf_sim_fn$start_l_fn)){
+    # Starting Age/Length
+    a_fn <- lf_nice$tset[lf_nice$length_round == lf_sim_fn$start_l_fn[i]] 
+    lf_sim_fn$start_a_fn[i] <- a_fn
+    
+    # 1-yr Age/Length
+    t_f <- a_fn + 1
+    lf_sim_fn$a_1_fn[i] <- t_f
+    lf_sim_fn$l_1_fn[i] <- l_inf* t_fn *(1-exp(-k*(t-t_0)+(((c*k)/(2*pi))*sinpi(t-t_s))-(((c*k)/(2*pi))*sinpi(t_s))))
+    
+    # 2-yr Age/Length
+    t_f <- t_f + 1
+    lf_sim_fn$a_2_fn[i] <- t_f
+    lf_sim_fn$l_2_fn[i] <- l_inf*t_fn *(1-exp(-k*(t-t_0)+(((c*k)/(2*pi))*sinpi(t-t_s))-(((c*k)/(2*pi))*sinpi(t_s))))
+   
+    # 3-yr Age/Length
+    t_f <- t_f + 1
+    lf_sim_fn$a_3_fn[i] <- t_f
+    lf_sim_fn$l_3_fn[i] <- l_inf*t_fn *(1-exp(-k*(t-t_0)+(((c*k)/(2*pi))*sinpi(t-t_s))-(((c*k)/(2*pi))*sinpi(t_s))))
+    
+    # 3-yr Age/Length
+    t_f <- t_f + 1
+    lf_sim_fn$a_4_fn[i] <- t_f
+    lf_sim_fn$l_4_fn[i] <- l_inf*t_fn *(1-exp(-k*(t-t_0)+(((c*k)/(2*pi))*sinpi(t-t_s))-(((c*k)/(2*pi))*sinpi(t_s))))
+    
+    # include region in the df
+    region <- t_f + 1
+    lf_sim_fn$region[i] <- c("FN")
+}
+```
+
+```{r for loop for rj}
+lf_sim_rj <- data.frame(start_l_rj = lf_ap13$starting_length,
+                     start_a_rj = NaN*length(lf_ap13),
+                     a_1_rj = NaN*length(lf_ap13),
+                     l_1_rj = NaN*length(lf_ap13),
+                     a_2_rj = NaN*length(lf_ap13),
+                     l_2_rj = NaN*length(lf_ap13), 
+                     a_3_rj = NaN*length(lf_ap13),
+                     l_3_rj = NaN*length(lf_ap13),
+                     a_4_rj = NaN*length(lf_ap13),
+                     l_4_rj = NaN*length(lf_ap13),
+                     region = NaN*length(lf_ap13))
+
+for(i in 1:length(lf_sim_rj$start_l_rj)){
+    # Starting Age/Length
+    a_rj <- lf_nice$tset[lf_nice$length_round == lf_sim_rj$start_l_rj[i]] 
+    lf_sim_rj$start_a_rj[i] <- a_rj
+    
+    # 1-yr Age/Length
+    t_r <- a_rj + 1
+    lf_sim_rj$a_1_rj[i] <- t_r
+    lf_sim_rj$l_1_rj[i] <- l_inf* t_rj *(1-exp(-k*(t-t_0)+(((c*k)/(2*pi))*sinpi(t-t_s))-(((c*k)/(2*pi))*sinpi(t_s))))
+    
+    # 2-yr Age/Length
+    t_r <- t_r + 1
+    lf_sim_rj$a_2_rj[i] <- t_r
+    lf_sim_rj$l_2_rj[i] <- l_inf*t_rj *(1-exp(-k*(t-t_0)+(((c*k)/(2*pi))*sinpi(t-t_s))-(((c*k)/(2*pi))*sinpi(t_s))))
+   
+    # 3-yr Age/Length
+    t_r <- t_r + 1
+    lf_sim_rj$a_3_rj[i] <- t_r
+    lf_sim_rj$l_3_rj[i] <- l_inf*t_rj *(1-exp(-k*(t-t_0)+(((c*k)/(2*pi))*sinpi(t-t_s))-(((c*k)/(2*pi))*sinpi(t_s))))
+    
+    # 3-yr Age/Length
+    t_r <- t_r + 1
+    lf_sim_rj$a_4_rj[i] <- t_r
+    lf_sim_rj$l_4_rj[i] <- l_inf*t_rj *(1-exp(-k*(t-t_0)+(((c*k)/(2*pi))*sinpi(t-t_s))-(((c*k)/(2*pi))*sinpi(t_s))))
+    
+    # include region in the df
+    region <- t_r + 1
+    lf_sim_rj$region[i] <- c("RJ")
+}
+```
+
+
+```{r plot for figure 3 model extension}
+ggplot(data = lf_sim_m) +
+  geom_histogram(aes(x = start_l_m, fill = "April 2013"), alpha = 0.5)+
+  geom_histogram(aes(x = l_1_m, fill = "April 2013 aged to April 2014"), alpha = 0.5) +
+  geom_histogram(aes(x = l_2_m, fill = "April 2013 aged to April 2015"), alpha = 0.5) +
+  geom_histogram(aes(x = l_3_m, fill = "April 2013 aged to April 2016"), alpha = 0.5) +
+  geom_histogram(aes(x = l_4_m, fill = "April 2013 aged to April 2017"), alpha = 0.5) +
+  labs(x = "Length", y = "Frequency", fill = NULL, title = "Simulation for Maranhao") +
+  theme_classic()
+
+ggplot(data = lf_sim_fn) +
+  geom_histogram(aes(x = start_l_fn, fill = "April 2013"), alpha = 0.5)+
+  geom_histogram(aes(x = l_1_fn, fill = "April 2013 aged to April 2014"), alpha = 0.5) +
+  geom_histogram(aes(x = l_2_fn, fill = "April 2013 aged to April 2015"), alpha = 0.5) +
+  geom_histogram(aes(x = l_3_fn, fill = "April 2013 aged to April 2016"), alpha = 0.5) +
+  geom_histogram(aes(x = l_4_fn, fill = "April 2013 aged to April 2017"), alpha = 0.5) +
+  labs(x = "Length", y = "Frequency", fill = NULL, title = "Simulation for Fernando de Noronha") +
+  theme_classic()
+
+ggplot(data = lf_sim_rj) +
+  geom_histogram(aes(x = start_l_rj, fill = "April 2013"), alpha = 0.5)+
+  geom_histogram(aes(x = l_1_rj, fill = "April 2013 aged to April 2014"), alpha = 0.5) +
+  geom_histogram(aes(x = l_2_rj, fill = "April 2013 aged to April 2015"), alpha = 0.5) +
+  geom_histogram(aes(x = l_3_rj, fill = "April 2013 aged to April 2016"), alpha = 0.5) +
+  geom_histogram(aes(x = l_4_rj, fill = "April 2013 aged to April 2017"), alpha = 0.5) +
+  labs(x = "Length", y = "Frequency", fill = NULL, title = "Simulation for Rio de Janeiro") +
+  theme_classic()
+
+ggplot(data = lf_sim_fl) +
+  geom_histogram(aes(x = start_l_fl, fill = "April 2013"), alpha = 0.5)+
+  geom_histogram(aes(x = l_1_fl, fill = "April 2013 aged to April 2014"), alpha = 0.5) +
+  geom_histogram(aes(x = l_2_fl, fill = "April 2013 aged to April 2015"), alpha = 0.5) +
+  geom_histogram(aes(x = l_3_fl, fill = "April 2013 aged to April 2016"), alpha = 0.5) +
+  geom_histogram(aes(x = l_4_fl, fill = "April 2013 aged to April 2017"), alpha = 0.5) +
+  labs(x = "length", y = "frequency", fill = NULL, title = "Florida Simulation") +
+  theme_classic()
+```
 
 
 ### Figure 4 - Model extension Leo
 
 ```{r}
-# Parameters 
-l_inf = 448 # asymptotic maximum length
-k = 0.47    # Brody growth coefficient
-c = 0.61    # intensity of seasonal growth oscillation. 
-               # varies from 0 to 1, with zero being no seasonality 
-               # and one extreme seasonality
-t_0 = 0    # theoretical time when fish was length zero
-t_s = 0.71 # timing of seasonal growth oscillation...
-              # slowest growth is at winter point, tw = ts + 0.5
-
-# Values of temperature for each location
-# Maranhão
-t_m = 28
-
-# Fernando de Noronha
-t_fn = 27
-
-# Rio de Janeiro
-t_rj = 25
-
 # Set up loop to iterate model across time/age
 tset <- seq(from = 0, to = 4, by = 0.001)
 lf <- data.frame(tset, lengths = NaN*tset)
@@ -336,7 +612,7 @@ lf_rj <- data.frame(tset, lengths = NaN*tset)
 for(i in 1:length(tset)){
   t <- tset[i]
   
-  l_t <- l_inf*(1-exp(-k*(t-t_0)+(((c*k)/(2*pi))*sinpi(t-t_s))-(((c*k)/(2*pi))*sinpi(t_s))))
+  l_t <- l_inf*t_fl *(1-exp(-k*(t-t_0)+(((c*k)/(2*pi))*sinpi(t-t_s))-(((c*k)/(2*pi))*sinpi(t_s))))
   l_t_m <- l_inf*t_m* (1-exp(-k*(t-t_0)+(((c*k)/(2*pi))*sinpi(t-t_s))-(((c*k)/(2*pi))*sinpi(t_s))))
   l_t_fn <- l_inf*t_fn* (1-exp(-k*(t-t_0)+(((c*k)/(2*pi))*sinpi(t-t_s))-(((c*k)/(2*pi))*sinpi(t_s))))
   l_t_rj <- l_inf*t_rj* (1-exp(-k*(t-t_0)+(((c*k)/(2*pi))*sinpi(t-t_s))-(((c*k)/(2*pi))*sinpi(t_s))))
