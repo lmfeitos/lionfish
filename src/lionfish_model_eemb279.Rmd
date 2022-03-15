@@ -1,7 +1,7 @@
 ---
-title: "lionfish_model_eemb279"
+title: "Model Extension Report"
 author: "Leonardo Feitosa"
-date: "09/02/2022"
+date: "03/15/2022"
 output: html_document
 ---
 
@@ -11,29 +11,43 @@ library(tidyverse)
 library(here)
 library(janitor)
 library(patchwork)
+library(kableExtra)
 ```
 
 # Introduction
 
-(Background and context, approximately 200 words, citing at least two additional research papers.)
+  Invasive species management requires thorough understanding of life history characteristics, which can be used to model population dynamics and analyze effectiveness of various intervention strategies. Lionfish (*Pterois volitans/miles*) are an invasive species in the Caribbean, and have caused substantial harm to both the regional biological community and the people who rely on coral reefs for economic subsistence (Albins, 2015; Albins & Hixon, 2013). Since individual growth rates are often dependent on local environmental conditions, spatially-explicit estimates are necessary to better understand and manage lionfish invasions. Growth curves for this species have been generated for many locations throughout the Caribbean Sea (Akins et al., 2014; Rodríguez-Cortés, 2015). The paper we analyze in this project, by Eric G. Johnson and Mary Katherine Swenarton (2016), fills the knowledge gap on the individual-level growth patterns in a temperate population in Northeastern Florida. 
 
-## Motivation
+  Growth studies are also critical to understand how predator-prey interactions might be influenced by a rapid-growth invasive species such as the lionfish (Lorenzen, 2006). Johnson and Swenarton (2016) study the growth patterns and evaluate the population structure of *Pterois volitans/miles* through length-frequency data, applying a modified version of the von Bertalanffy Growth Function (VBGF) to include seasonality as an environmental parameter. In this paper, we recreate some of the analyses they performed in their paper and discuss the ecological importance of their results.  
 
-Invasive species management requires thorough understanding of life history characteristics, which can be used to model population dynamics and analyze effectiveness of various intervention strategies. Lionfish are invasive and have spread rapidly through the western Atlantic, but spatially-explicit estimates for growth rate have not been identified in many regions. This paper uses length-frequency data to estimate lionfish growth rate in one of these areas: northeast Florida. 
+# Model Presentation
 
-## Paper's Key Goals & Findings:
+The von Bertalanffy growth function uses length as a proxy for age. Generally, the length of a fish increases as it gets older, and many fish species demonstrate rapid growth as juveniles that then decreases as they near their maximum size. For species which experience seasonal temperature variations, such as temperate lionfish, the seasonalized version of this length-age function is often most appropriate:
 
-1. Develop length-based model to estimate age, growth, and population structure - found rapid growth with seasonal variation
+$$
+\begin{align}
+\text{Seasonalized:} 
+\newline 
+L_t & = L_\infty [1-e^{-(K(t-t_0))-S(t)+S(t_0)}] \\ 
+\newline
+S(t)  &= \frac{CK}{2\pi} \cdot sin \pi(t-t_s)
+\newline
+S(t_0) &= \frac{CK}{2\pi} \cdot sin \pi(t_0-t_s)
+\end{align}
+$$
 
-2. Evaluate model performance through validation with otolith analysis and external length-frequency data
+Here, the length of a fish at a certain age ($L_t$) is a function of the Brody growth coefficient ($K$) and fluctuations in the growth rate depending on the seasonal growth patterns (described by $S(t)$ and $S(t_0)$). The intensity of these fluctuations is controlled by $C$, where $C = 0$ indicates no seasonality, and $C = 1$ indicates complete seasonality. A complete list of parameters and their descriptions are included in Table 1. 
 
-3. Estimate vital rates and population structure for the region - distinct cohorts were identifiable, suggesting recruitment occurs during a relatively short summer period; majority of lionfish < 2 years of age, none > 3 years of age
+
+## Model Extension's Key Goals & Findings:
+
+The paper analyzed in this project (Johnson & Swenarton 2016) consists of the calculations of growth for the lionfish (Pterois volitans/miles) in Northeastern Florida. While growth curves for this species have been generated throughout the region independently (Akins et al., 2014; Rodríguez-Cortés, 2015), the paper we analyzed does it in a very local scale within a limited time frame (2013-2015). Therefore, my proposal for an extension of this model is to include sea water temperature as another parameter, given that water temperature is key to the development and reproductive parameters of fish (Rountrey et al., 2014). Furthermore, given the recent extension records of the invasive lionfish beyond the Caribbean and as far south as Rio de Janeiro, southeastern Brazil (Ferreira et al., 2015; Luiz et al., 2021), the populations of this species are likely to be subjected to different sea water temperatures, thus likely exhibiting different growth patterns.
 
 ## Methods
 
 #### Sampling
 
-Sampling occured from 2013-2015 during "lionfish roundup" tournaments and other opportunistic sampling via spearfishing. In the lab, lionfish were measured for standard and total length, weighed, and sexed. The authors retrieved otoliths from 100 lionfish to determine age directly. 
+Sampling occurred from 2013-2015 during "lionfish roundup" tournaments and other opportunistic sampling via spearfishing. In the lab, lionfish were measured for standard and total length, weighed, and sexed. The authors retrieved otoliths from 100 lionfish to determine age directly. 
 
 #### Model Creation
 
@@ -87,6 +101,47 @@ $$
 L_t = 448 [1-e^{-0.47t+[\frac{0.061*0.47}{2\pi}]sin\pi(t-0.71)]-[\frac{0.61*0.47}{2\pi}sin\pi(0.71)]}]
 \end{align}
 $$
+
+***Table 1. Description of variables and parameters for the seasonalized von-Bertalanffy growth equation***
+```{r echo=FALSE}
+# Insert table here
+table <- data.frame("Term" = c("$L_t$",
+                               "$t$",
+                               "$L_\\infty$",
+                               "$K$",
+                               "$t_0$",
+                               "$t_s$",
+                               "$t_w$",
+                               "$t_b$",
+                               "$C$",
+                               "$T$"),
+                    "Estimate" = c("output variable (mm)",
+                                   "input variable (yr)",
+                                   "448 mm",
+                                   "0.47 yr$^{-1}$",
+                                   "0 yr",
+                                   "0.71 yr",
+                                   "not stated",
+                                   "0.41 yr",
+                                   "0.61",
+                                   "22.5(Fl), 23 (BRJ), 24 (BFN), 25 (BNB)"),
+                    "Description" = c("length of fish at age $t$",
+                                      "age $t$",
+                                      "asymptotic maximum length",
+                                      "Brody growth coefficient",
+                                      "theoretical time at which fish was length zero artificial constant set at zero for this paper)",
+                                      "seasonal growth oscillation relative to $t_0$",
+                                      "winter point, time of slowest growth ($t_w = t_s + 0.5$)",
+                                      "time of annual recruitment",
+                                      "intensity of seasonal growth oscillation 
+                                      ($0 \\leq C \\leq 1$, where zero indicates 
+                                      no seasonality and one indicates complete seasonality)",
+                                      "water temperature (ºC). FL - Florda, BRJ - Rio de Janeiro,
+                                      BFN - Fernando de Noronha Archipelago, BNB - Northern Brazilian coast"))
+kable(table) %>% 
+  kable_styling()
+```
+
 ## Replication
 
 ### Data Processing
@@ -108,117 +163,6 @@ lionfish_sum <- lionfish_long %>%
   group_by(year, total_length_tl) %>% 
   summarise(freq_sum = sum(frequency))
 
-```
-
-### Length-Frequency Histograms:
-
-
-```{r}
-lion_ap_2013 <- ggplot(data = lionfish_tl) +
-  geom_col(aes(x = total_length_tl, y = april_2013)) +
-  labs(x = "",
-       y = "",
-       title = "April 2013") +
-  theme_bw() +
-  theme(axis.title = element_text(color = "black", size = 12),
-        axis.text = element_text(color = "black", size = 10))
-```
-
-```{r}
-lion_aug_2013 <- ggplot(data = lionfish_tl) +
-  geom_col(aes(x = total_length_tl, y = august_2013)) +
-  labs(x = "",
-       y = "",
-       title = "August 2013") +
-  theme_bw() +
-  theme(axis.title = element_text(color = "black", size = 12),
-        axis.text = element_text(color = "black", size = 10))
-```
-
-```{r}
-lion_ap_2014 <- ggplot(data = lionfish_tl) +
-  geom_col(aes(x = total_length_tl, y = april_2014)) +
-  labs(x = "",
-       y = "",
-       title = "April 2014") +
-  theme_bw() +
-  theme(axis.title = element_text(color = "black", size = 12),
-        axis.text = element_text(color = "black", size = 10))
-```
-
-```{r}
-lion_jul_2014 <- ggplot(data = lionfish_tl) +
-  geom_col(aes(x = total_length_tl, y = july_2014)) +
-  labs(x = "",
-       y = "",
-       title = "July 2014") +
-  theme_bw() +
-  theme(axis.title = element_text(color = "black", size = 12),
-        axis.text = element_text(color = "black", size = 10))
-```
-
-```{r}
-lion_aug_2014 <- ggplot(data = lionfish_tl) +
-  geom_col(aes(x = total_length_tl, y = august_2014)) +
-  labs(x = "",
-       y = "",
-       title = "August 2014") +
-  theme_bw() +
-  theme(axis.title = element_text(color = "black", size = 12),
-        axis.text = element_text(color = "black", size = 10))
-```
-
-```{r}
-lion_oc_2014 <- ggplot(data = lionfish_tl) +
-  geom_col(aes(x = total_length_tl, y = october_2014)) +
-  labs(x = "",
-       y = "",
-       title = "October 2014") +
-  theme_bw() +
-  theme(axis.title = element_text(color = "black", size = 12),
-        axis.text = element_text(color = "black", size = 10))
-```
-
-```{r}
-lion_nov_2014 <- ggplot(data = lionfish_tl) +
-  geom_col(aes(x = total_length_tl, y = november_2014)) +
-  labs(x = "",
-       y = "",
-       title = "November 2014") +
-  theme_bw() +
-  theme(axis.title = element_text(color = "black", size = 12),
-        axis.text = element_text(color = "black", size = 10))
-```
-
-```{r}
-lion_jan_2015 <- ggplot(data = lionfish_tl) +
-  geom_col(aes(x = total_length_tl, y = january_2015)) +
-  labs(x = "",
-       y = "",
-       title = "January 2015") +
-  theme_bw() +
-  theme(axis.title = element_text(color = "black", size = 12),
-        axis.text = element_text(color = "black", size = 10))
-```
-
-```{r}
-lion_aug_2015 <- ggplot(data = lionfish_tl) +
-  geom_col(aes(x = total_length_tl, y = august_2015)) +
-  labs(x = "",
-       y = "",
-       title = "August 2015") +
-  theme_bw() +
-  theme(axis.title = element_text(color = "black", size = 12),
-        axis.text = element_text(color = "black", size = 10))
-```
-
-```{r, fig.height=10}
-(lion_ap_2013 + lion_aug_2013) /
-  (lion_ap_2014 + lion_jul_2014) /
-  (lion_aug_2014 + lion_oc_2014) /
-  (lion_nov_2014 + lion_jan_2015) /
-  (lion_aug_2015) +
-  plot_annotation(tag_levels = "A")
 ```
 
 ##### Cleaner Alternative: ggplot + facet_wrap()
