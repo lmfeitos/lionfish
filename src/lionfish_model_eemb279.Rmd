@@ -275,9 +275,9 @@ ggplot(data = lf_sim_long) +
 
 # Discussion
 
-* Still need to develop 100-words (2 sources) summarizing the key findings... 
+Unlike other studies that did age and growth analyses for lionfish in the Caribbean Sea (Akins et al 2014; Rodríguez-Cortés, 2015), Johnson & Swenarton (2016) demonstrated that lionfish growth has suffers substantially from seasonality, at least in a temperate region as Northeast Florida. However, given the localized nature of this study, it is not possible to draw conclusions about its growth patterns for the whole Caribbean area, especially given that southern Caribbean is less affected by seasonality. Nevertheless, Kimball et al (2004) studied the thermal tolerance of lionfish in the Atlantic and demonstrated that they die at 10ºC and can no longer feed at temperatures of 16ºC. Therefore, temperature could be considered a limiting factor for the invasion of areas further north of Florida where water temperatures might reach between 10 and 16ºC (Ruiz-Carus et al 2006).      
 
-### Paper's Key Goals & Findings (from the paper):
+### Paper's Key Goals & Findings:
 
 1. Develop length-based model to estimate age, growth, and population structure - found rapid growth with seasonal variation
 
@@ -296,6 +296,12 @@ Albins, M. A. (2015). Invasive Pacific lionfish Pterois volitans reduce abundanc
 
 Albins, M. A., & Hixon, M. A. (2013). Worst case scenario: Potential long-term effects of invasive predatory lionfish (Pterois volitans) on Atlantic and Caribbean coral-reef communities. Environmental Biology of Fishes, 96(10), 1151–1157. https://doi.org/10.1007/s10641-011-9795-1
 
+Johnson, E. G., & Swenarton, M. K. (2016). Age, growth and population structure of invasive lionfish (Pterois volitans/miles) in northeast Florida using a length-based, age-structured population model. PeerJ, 4, e2730.
+
+Kimball, M. E., Miller, J. M., Whitfield, P. E., & Hare, J. A. (2004). Thermal tolerance and potential distribution of invasive lionfish (Pterois volitans/miles complex) on the east coast of the United States. Marine Ecology Progress Series, 283, 269-278.
+
 Lorenzen K. 2006. Population management in fisheries enhancement: gaining key information from release experiments through use of a size-dependent mortality model. Fisheries Research 80:19-27.
 
 Rodríguez-Cortés, K. D. (2015). Growth and mortality of red lionfish, Pterois volitans (Actinopterygii: Scorpaeniformes: Scorpaenidae), in the Parque Nacional Arrecife Alacranes, southern Gulf of Mexico, as determined by size-frequency analysis. Acta Ichthyologica et Piscatoria, 45(2), 175–179. https://doi.org/10.3750/AIP2015.45.2.07
+
+Ruiz-Carus, R., Matheson Jr, R. E., Roberts Jr, D. E., & Whitfield, P. E. (2006). The western Pacific red lionfish, Pterois volitans (Scorpaenidae), in Florida: Evidence for reproduction and parasitism in the first exotic marine fish established in state waters. Biological Conservation, 128(3), 384-390.
