@@ -318,7 +318,7 @@ lf_sim_fl_long <- lf_sim_fl %>%
                                            "After 2 Years",  "After 3 Years", "After 4 Years")))
 
 # Works!
-ggplot(data = lf_sim_fl_long) +
+fl_plot <- ggplot(data = lf_sim_fl_long) +
   geom_density_line(aes(x = length, color = time, fill = time), 
                     alpha = 0.5) +
   labs(color = NULL,
@@ -389,7 +389,7 @@ lf_sim_m_long <- lf_sim_m %>%
                                            "After 2 Years",  "After 3 Years", "After 4 Years")))
 
 # Works!
-ggplot(data = lf_sim_m_long) +
+m_plot <- ggplot(data = lf_sim_m_long) +
   geom_density_line(aes(x = length, color = time, fill = time), 
                     alpha = 0.5) +
   labs(color = NULL,
@@ -421,27 +421,27 @@ for(i in 1:length(lf_sim_fn$start_l_fn)){
     lf_sim_fn$start_a_fn[i] <- a_fn
     
     # 1-yr Age/Length
-    t_f <- a_fn + 1
-    lf_sim_fn$a_1_fn[i] <- t_f
+    t <- a_fn + 1
+    lf_sim_fn$a_1_fn[i] <- t
     lf_sim_fn$l_1_fn[i] <- l_inf* t_fn *(1-exp(-k*(t-t_0)+(((c*k)/(2*pi))*sinpi(t-t_s))-(((c*k)/(2*pi))*sinpi(t_s))))
     
     # 2-yr Age/Length
-    t_f <- t_f + 1
-    lf_sim_fn$a_2_fn[i] <- t_f
+    t <- t + 1
+    lf_sim_fn$a_2_fn[i] <- t
     lf_sim_fn$l_2_fn[i] <- l_inf*t_fn *(1-exp(-k*(t-t_0)+(((c*k)/(2*pi))*sinpi(t-t_s))-(((c*k)/(2*pi))*sinpi(t_s))))
    
     # 3-yr Age/Length
-    t_f <- t_f + 1
-    lf_sim_fn$a_3_fn[i] <- t_f
+    t <- t + 1
+    lf_sim_fn$a_3_fn[i] <- t
     lf_sim_fn$l_3_fn[i] <- l_inf*t_fn *(1-exp(-k*(t-t_0)+(((c*k)/(2*pi))*sinpi(t-t_s))-(((c*k)/(2*pi))*sinpi(t_s))))
     
     # 3-yr Age/Length
-    t_f <- t_f + 1
-    lf_sim_fn$a_4_fn[i] <- t_f
+    t <- t + 1
+    lf_sim_fn$a_4_fn[i] <- t
     lf_sim_fn$l_4_fn[i] <- l_inf*t_fn *(1-exp(-k*(t-t_0)+(((c*k)/(2*pi))*sinpi(t-t_s))-(((c*k)/(2*pi))*sinpi(t_s))))
     
     # include region in the df
-    region <- t_f + 1
+    region <- t + 1
     lf_sim_fn$region[i] <- c("FN")
 }
 
@@ -459,7 +459,7 @@ lf_sim_fn_long <- lf_sim_fn %>%
                                            "After 2 Years",  "After 3 Years", "After 4 Years")))
 
 # Works!
-ggplot(data = lf_sim_fn_long) +
+fn_plot <- ggplot(data = lf_sim_fn_long) +
   geom_density_line(aes(x = length, color = time, fill = time), 
                     alpha = 0.5) +
   labs(color = NULL,
@@ -491,27 +491,27 @@ for(i in 1:length(lf_sim_rj$start_l_rj)){
     lf_sim_rj$start_a_rj[i] <- a_rj
     
     # 1-yr Age/Length
-    t_r <- a_rj + 1
-    lf_sim_rj$a_1_rj[i] <- t_r
+    t <- a_rj + 1
+    lf_sim_rj$a_1_rj[i] <- t
     lf_sim_rj$l_1_rj[i] <- l_inf* t_rj *(1-exp(-k*(t-t_0)+(((c*k)/(2*pi))*sinpi(t-t_s))-(((c*k)/(2*pi))*sinpi(t_s))))
     
     # 2-yr Age/Length
-    t_r <- t_r + 1
-    lf_sim_rj$a_2_rj[i] <- t_r
+    t <- t + 1
+    lf_sim_rj$a_2_rj[i] <- t
     lf_sim_rj$l_2_rj[i] <- l_inf*t_rj *(1-exp(-k*(t-t_0)+(((c*k)/(2*pi))*sinpi(t-t_s))-(((c*k)/(2*pi))*sinpi(t_s))))
    
     # 3-yr Age/Length
-    t_r <- t_r + 1
-    lf_sim_rj$a_3_rj[i] <- t_r
+    t <- t + 1
+    lf_sim_rj$a_3_rj[i] <- t
     lf_sim_rj$l_3_rj[i] <- l_inf*t_rj *(1-exp(-k*(t-t_0)+(((c*k)/(2*pi))*sinpi(t-t_s))-(((c*k)/(2*pi))*sinpi(t_s))))
     
     # 3-yr Age/Length
-    t_r <- t_r + 1
-    lf_sim_rj$a_4_rj[i] <- t_r
+    t <- t + 1
+    lf_sim_rj$a_4_rj[i] <- t
     lf_sim_rj$l_4_rj[i] <- l_inf*t_rj *(1-exp(-k*(t-t_0)+(((c*k)/(2*pi))*sinpi(t-t_s))-(((c*k)/(2*pi))*sinpi(t_s))))
     
     # include region in the df
-    region <- t_r + 1
+    region <- t + 1
     lf_sim_rj$region[i] <- c("RJ")
 }
 
@@ -528,14 +528,13 @@ lf_sim_rj_long <- lf_sim_rj %>%
   mutate(time = fct_relevel(time, levels = c("Initial Population", "After 1 Year", 
                                            "After 2 Years",  "After 3 Years", "After 4 Years")))
 
-# Works!
-ggplot(data = lf_sim_rj_long) +
+rj_plot <- ggplot(data = lf_sim_rj_long) +
   geom_density_line(aes(x = length, color = time, fill = time), 
                     alpha = 0.5) +
   labs(color = NULL,
        fill = NULL,
-       x = "length (mm)",
-       y = "frequency (number of lionfish)") +
+       x = "Length (mm)",
+       y = "Frequency (number of lionfish)") +
   theme_classic()+
   facet_wrap(~time, ncol = 1) +
   theme(strip.text = element_blank(),
@@ -543,45 +542,14 @@ ggplot(data = lf_sim_rj_long) +
 ```
 
 
-```{r plot for figure 3 model extension}
-ggplot(data = lf_sim_m) +
-  geom_histogram(aes(x = start_l_m, fill = "April 2013"), alpha = 0.5)+
-  geom_histogram(aes(x = l_1_m, fill = "April 2013 aged to April 2014"), alpha = 0.5) +
-  geom_histogram(aes(x = l_2_m, fill = "April 2013 aged to April 2015"), alpha = 0.5) +
-  geom_histogram(aes(x = l_3_m, fill = "April 2013 aged to April 2016"), alpha = 0.5) +
-  geom_histogram(aes(x = l_4_m, fill = "April 2013 aged to April 2017"), alpha = 0.5) +
-  labs(x = "Length", y = "Frequency", fill = NULL, title = "Simulation for Maranhao") +
-  theme_classic()
 
-ggplot(data = lf_sim_fn) +
-  geom_histogram(aes(x = start_l_fn, fill = "April 2013"), alpha = 0.5)+
-  geom_histogram(aes(x = l_1_fn, fill = "April 2013 aged to April 2014"), alpha = 0.5) +
-  geom_histogram(aes(x = l_2_fn, fill = "April 2013 aged to April 2015"), alpha = 0.5) +
-  geom_histogram(aes(x = l_3_fn, fill = "April 2013 aged to April 2016"), alpha = 0.5) +
-  geom_histogram(aes(x = l_4_fn, fill = "April 2013 aged to April 2017"), alpha = 0.5) +
-  labs(x = "Length", y = "Frequency", fill = NULL, title = "Simulation for Fernando de Noronha") +
-  theme_classic()
-
-ggplot(data = lf_sim_rj) +
-  geom_histogram(aes(x = start_l_rj, fill = "April 2013"), alpha = 0.5)+
-  geom_histogram(aes(x = l_1_rj, fill = "April 2013 aged to April 2014"), alpha = 0.5) +
-  geom_histogram(aes(x = l_2_rj, fill = "April 2013 aged to April 2015"), alpha = 0.5) +
-  geom_histogram(aes(x = l_3_rj, fill = "April 2013 aged to April 2016"), alpha = 0.5) +
-  geom_histogram(aes(x = l_4_rj, fill = "April 2013 aged to April 2017"), alpha = 0.5) +
-  labs(x = "Length", y = "Frequency", fill = NULL, title = "Simulation for Rio de Janeiro") +
-  theme_classic()
-
-ggplot(data = lf_sim_fl) +
-  geom_histogram(aes(x = start_l_fl, fill = "April 2013"), alpha = 0.5)+
-  geom_histogram(aes(x = l_1_fl, fill = "April 2013 aged to April 2014"), alpha = 0.5) +
-  geom_histogram(aes(x = l_2_fl, fill = "April 2013 aged to April 2015"), alpha = 0.5) +
-  geom_histogram(aes(x = l_3_fl, fill = "April 2013 aged to April 2016"), alpha = 0.5) +
-  geom_histogram(aes(x = l_4_fl, fill = "April 2013 aged to April 2017"), alpha = 0.5) +
-  labs(x = "length", y = "frequency", fill = NULL, title = "Florida Simulation") +
-  theme_classic()
+```{r plot for figure 3 model extension, fig.width=8, fig.height=8}
+(fl_plot + m_plot) /
+  (fn_plot + rj_plot) +
+  plot_annotation(tag_level = c("A"))
 ```
 
-**Figure 2.** Shifting age and size structure of lionfish population, as sampled in April 2013 in Northeast Florida. This figure demonstrates growth of a single snapshot of individuals over four years, and does not account for any births, deaths, immigration, or emigration.
+**Figure 2.** Shifting age and size structure of lionfish population, as sampled in April 2013 in Northeast Florida. A - Northeast Florida, B - Amazon reefs, C - Fernando de Noronha Archipelago, D - Rio de Janeiro. This figure demonstrates growth of a single snapshot of individuals over four years, and does not account for any births, deaths, immigration, or emigration.
 
 
 ```{r}
@@ -598,7 +566,7 @@ for(i in 1:length(tset)){
   
   # Growth models
   l_t <- l_inf*(1-exp(-k*(t-t_0)+(((c*k)/(2*pi))*sinpi(t-t_s))-(((c*k)/(2*pi))*sinpi(t_s)))) # original one
-  l_t_fl <- l_inf*t_fl *(1-exp(-k*(t-t_0)+(((c*k)/(2*pi))*sinpi(t-t_s))-(((c*k)/(2*pi))*sinpi(t_s))))
+  l_t_fl <- l_inf* t_fl*(1-exp(-k*(t-t_0)+(((c*k)/(2*pi))*sinpi(t-t_s))-(((c*k)/(2*pi))*sinpi(t_s))))
   l_t_m <- l_inf*t_m* (1-exp(-k*(t-t_0)+(((c*k)/(2*pi))*sinpi(t-t_s))-(((c*k)/(2*pi))*sinpi(t_s))))
   l_t_fn <- l_inf*t_fn* (1-exp(-k*(t-t_0)+(((c*k)/(2*pi))*sinpi(t-t_s))-(((c*k)/(2*pi))*sinpi(t_s))))
   l_t_rj <- l_inf*t_rj* (1-exp(-k*(t-t_0)+(((c*k)/(2*pi))*sinpi(t-t_s))-(((c*k)/(2*pi))*sinpi(t_s))))
@@ -647,11 +615,11 @@ ggplot() +
   theme_classic() +
   theme(axis.title = element_text(color = "black", size = 12),
         axis.text = element_text(color = "black", size = 11),
-        legend.position = c(.8, .4),
+        legend.position = c(.8, .58),
         legend.text = element_text(size = 12))
 ```
 
-**Figure 3.** Estimated age-length relationship for lionfish in the modified version of the seasonalized von-Bertalanffy growth equation. 
+**Figure 3.** Estimated age-length relationship for lionfish in the modified version of the seasonalized von-Bertalanffy growth equation for each region. 
 
 
 # Ecological implications of this model extension
