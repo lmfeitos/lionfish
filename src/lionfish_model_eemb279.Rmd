@@ -275,7 +275,9 @@ ggplot(data = lf_sim_long) +
 
 # Discussion
 
-### Paper's Key Goals & Findings:
+* Still need to develop 100-words (2 sources) summarizing the key findings... 
+
+### Paper's Key Goals & Findings (from the paper):
 
 1. Develop length-based model to estimate age, growth, and population structure - found rapid growth with seasonal variation
 
@@ -283,6 +285,8 @@ ggplot(data = lf_sim_long) +
 
 3. Estimate vital rates and population structure for the region - distinct cohorts were identifiable, suggesting recruitment occurs during a relatively short summer period; majority of lionfish < 2 years of age, none > 3 years of age
 
+
+Our main critique of this paper is that the proportion of lionfish in each age class in the samples is likely not representative of the population. The samples were caught by divers via spearfishing, which restricts the size range likely to be sampled. Small lionfish are very cryptic and would be both difficult to locate and spear effectively, and larger lionfish often move to deeper waters beyond most diving locations. This means that the collected samples may inflate the proportion of the middle size classes. This suggests that the model may be reasonable for estimating growth of the sampled size classes, but may not be appropriate for estimating growth of very small and very large size classes. Further, since the maximum asymptotic length ($L_\infty$) was specified based on the largest lionfish sampled, it is reasonable to suggest that the lionfish which travel to deeper waters may grow past this size. 
 
 # Citations
 
