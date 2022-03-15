@@ -14,6 +14,7 @@ library(here)
 library(janitor)
 library(patchwork)
 library(kableExtra)
+library(ggridges)
 ```
 
 # Introduction
@@ -154,16 +155,16 @@ t_s = 0.71 # timing of seasonal growth oscillation...
 
 # Values of temperature for each location
 # Maranhão
-t_m = 25  # Moura et al (2016)
+t_m = log(25)  # Moura et al (2016)
 
 # Fernando de Noronha
-t_fn = 24 # Prazeres et al (2012)
+t_fn = log(24) # Prazeres et al (2012)
 
 # Rio de Janeiro
-t_rj = 23 # Lima & Coutinho (2016)
+t_rj = log(23) # Lima & Coutinho (2016)
 
 # Northeast Florida
-t_fl = 22.5 # based on monthly averages for Jacksonville obtained from https://seatemperature.info/jacksonville-water-temperature.html 
+t_fl = log(22.5) # based on monthly averages for Jacksonville obtained from https://seatemperature.info/jacksonville-water-temperature.html 
 ```
 
 
@@ -196,6 +197,74 @@ lf_nice <- lf %>%
   ungroup()
 ```
 
+```{r}
+# Empty dataframe to populate age/length values
+lf_sim <- data.frame(start_l = lf_ap13$starting_length,
+                     start_a    = NaN*length(lf_ap13),
+                     a_1 = NaN*length(lf_ap13),
+                     l_1 = NaN*length(lf_ap13),
+                     a_2 = NaN*length(lf_ap13),
+                     l_2 = NaN*length(lf_ap13), 
+                     a_3 = NaN*length(lf_ap13),
+                     l_3 = NaN*length(lf_ap13),
+                     a_4 = NaN*length(lf_ap13),
+                     l_4 = NaN*length(lf_ap13))
+
+# Loop that populates changes in age/length across 4 years
+for(i in 1:length(lf_sim$start_l)){
+    # Starting Age/Length
+    a <- lf_nice$tset[lf_nice$length_round == lf_sim$start_l[i]] 
+    lf_sim$start_a[i] <- a
+    
+    # 1-yr Age/Length
+    t <- a + 1
+    lf_sim$a_1[i] <- t
+    lf_sim$l_1[i] <- l_inf*(1-exp(-k*(t-t_0)+(((c*k)/(2*pi))*sinpi(t-t_s))-(((c*k)/(2*pi))*sinpi(t_s))))
+    
+    # 2-yr Age/Length
+    t <- t + 1
+    lf_sim$a_2[i] <- t
+    lf_sim$l_2[i] <- l_inf*(1-exp(-k*(t-t_0)+(((c*k)/(2*pi))*sinpi(t-t_s))-(((c*k)/(2*pi))*sinpi(t_s))))
+   
+    # 3-yr Age/Length
+    t <- t + 1
+    lf_sim$a_3[i] <- t
+    lf_sim$l_3[i] <- l_inf*(1-exp(-k*(t-t_0)+(((c*k)/(2*pi))*sinpi(t-t_s))-(((c*k)/(2*pi))*sinpi(t_s))))
+    
+    # 4-yr Age/Length
+    t <- t + 1
+    lf_sim$a_4[i] <- t
+    lf_sim$l_4[i] <- l_inf*(1-exp(-k*(t-t_0)+(((c*k)/(2*pi))*sinpi(t-t_s))-(((c*k)/(2*pi))*sinpi(t_s))))
+}
+
+
+lf_sim_long <- lf_sim %>% 
+  select(start_l, l_1, l_2, l_3, l_4) %>% 
+  pivot_longer(cols = c("start_l", "l_1", "l_2", "l_3", "l_4"),
+               names_to = "time",
+               values_to = "length") %>% 
+  mutate(time = as.factor(case_when(time == "start_l" ~ "Initial Population",
+                                    time == "l_1" ~ "After 1 Year",
+                                    time == "l_2" ~ "After 2 Years",                            
+                                    time == "l_3" ~ "After 3 Years",
+                                    time == "l_4" ~ "After 4 Years"))) %>% 
+  mutate(time = fct_relevel(time, levels = c("Initial Population", "After 1 Year", 
+                                           "After 2 Years",  "After 3 Years", "After 4 Years")))
+
+# Works!
+ggplot(data = lf_sim_long) +
+  geom_density_line(aes(x = length, color = time, fill = time), 
+                    alpha = 0.5) +
+  labs(color = NULL,
+       fill = NULL,
+       x = "length (mm)",
+       y = "frequency (number of lionfish)") +
+  theme_classic()+
+  facet_wrap(~time, ncol = 1) +
+  theme(strip.text = element_blank(),
+        aspect.ratio = 1/5)
+```
+
 ```{r for loop for florida}
 lf_sim_fl <- data.frame(start_l_fl = lf_ap13$starting_length,
                      start_a_fl  = NaN*length(lf_ap13),
@@ -215,26 +284,51 @@ for(i in 1:length(lf_sim_fl$start_l_fl)){
     lf_sim_fl$start_a[i] <- a_fl
     
     # 1-yr Age/Length
-    t_flo <- a_fl + 1
-    lf_sim_fl$a_1_fl[i] <- t_flo
+    t <- a_fl + 1
+    lf_sim_fl$a_1_fl[i] <- t
     lf_sim_fl$l_1_fl[i] <- l_inf*t_fl*(1-exp(-k*(t-t_0)+(((c*k)/(2*pi))*sinpi(t-t_s))-(((c*k)/(2*pi))*sinpi(t_s))))
     
     # 2-yr Age/Length
-    t_flo <- t_flo + 1
-    lf_sim_fl$a_2_fl[i] <- t_flo
+    t <- t + 1
+    lf_sim_fl$a_2_fl[i] <- t
     lf_sim_fl$l_2_fl[i] <- l_inf*t_fl*(1-exp(-k*(t-t_0)+(((c*k)/(2*pi))*sinpi(t-t_s))-(((c*k)/(2*pi))*sinpi(t_s))))
    
     # 3-yr Age/Length
-    t_flo <- t_flo + 1
-    lf_sim_fl$a_3_fl[i] <- t_flo
+    t <- t + 1
+    lf_sim_fl$a_3_fl[i] <- t
     lf_sim_fl$l_3_fl[i] <- l_inf*t_fl*(1-exp(-k*(t-t_0)+(((c*k)/(2*pi))*sinpi(t-t_s))-(((c*k)/(2*pi))*sinpi(t_s))))
     
     # 3-yr Age/Length
-    t_flo <- t_flo + 1
-    lf_sim_fl$a_4_fl[i] <- t_flo
+    t <- t + 1
+    lf_sim_fl$a_4_fl[i] <- t
     lf_sim_fl$l_4_fl[i] <- l_inf* t_fl*(1-exp(-k*(t-t_0)+(((c*k)/(2*pi))*sinpi(t-t_s))-(((c*k)/(2*pi))*sinpi(t_s))))
 }
 
+lf_sim_fl_long <- lf_sim_fl %>% 
+  select(start_l_fl, l_1_fl, l_2_fl, l_3_fl, l_4_fl) %>% 
+  pivot_longer(cols = c("start_l_fl", "l_1_fl", "l_2_fl", "l_3_fl", "l_4_fl"),
+               names_to = "time",
+               values_to = "length") %>% 
+  mutate(time = as.factor(case_when(time == "start_l_fl" ~ "Initial Population",
+                                    time == "l_1_fl" ~ "After 1 Year",
+                                    time == "l_2_fl" ~ "After 2 Years",                            
+                                    time == "l_3_fl" ~ "After 3 Years",
+                                    time == "l_4_fl" ~ "After 4 Years"))) %>% 
+  mutate(time = fct_relevel(time, levels = c("Initial Population", "After 1 Year", 
+                                           "After 2 Years",  "After 3 Years", "After 4 Years")))
+
+# Works!
+ggplot(data = lf_sim_fl_long) +
+  geom_density_line(aes(x = length, color = time, fill = time), 
+                    alpha = 0.5) +
+  labs(color = NULL,
+       fill = NULL,
+       x = "length (mm)",
+       y = "frequency (number of lionfish)") +
+  theme_classic()+
+  facet_wrap(~time, ncol = 1) +
+  theme(strip.text = element_blank(),
+        aspect.ratio = 1/5)
 ```
 
 
@@ -281,6 +375,31 @@ for(i in 1:length(lf_sim_m$start_l_m)){
     lf_sim_m$region[i] <- c("MA")
 }
 
+lf_sim_m_long <- lf_sim_m %>% 
+  select(start_l_m, l_1_m, l_2_m, l_3_m, l_4_m) %>% 
+  pivot_longer(cols = c("start_l_m", "l_1_m", "l_2_m", "l_3_m", "l_4_m"),
+               names_to = "time",
+               values_to = "length") %>% 
+  mutate(time = as.factor(case_when(time == "start_l_m" ~ "Initial Population",
+                                    time == "l_1_m" ~ "After 1 Year",
+                                    time == "l_2_m" ~ "After 2 Years",                            
+                                    time == "l_3_m" ~ "After 3 Years",
+                                    time == "l_4_m" ~ "After 4 Years"))) %>% 
+  mutate(time = fct_relevel(time, levels = c("Initial Population", "After 1 Year", 
+                                           "After 2 Years",  "After 3 Years", "After 4 Years")))
+
+# Works!
+ggplot(data = lf_sim_m_long) +
+  geom_density_line(aes(x = length, color = time, fill = time), 
+                    alpha = 0.5) +
+  labs(color = NULL,
+       fill = NULL,
+       x = "length (mm)",
+       y = "frequency (number of lionfish)") +
+  theme_classic()+
+  facet_wrap(~time, ncol = 1) +
+  theme(strip.text = element_blank(),
+        aspect.ratio = 1/5)
 ```
 
 ```{r for loop for noronha}
@@ -325,6 +444,32 @@ for(i in 1:length(lf_sim_fn$start_l_fn)){
     region <- t_f + 1
     lf_sim_fn$region[i] <- c("FN")
 }
+
+lf_sim_fn_long <- lf_sim_fn %>% 
+  select(start_l_fn, l_1_fn, l_2_fn, l_3_fn, l_4_fn) %>% 
+  pivot_longer(cols = c("start_l_fn", "l_1_fn", "l_2_fn", "l_3_fn", "l_4_fn"),
+               names_to = "time",
+               values_to = "length") %>% 
+  mutate(time = as.factor(case_when(time == "start_l_fn" ~ "Initial Population",
+                                    time == "l_1_fn" ~ "After 1 Year",
+                                    time == "l_2_fn" ~ "After 2 Years",                            
+                                    time == "l_3_fn" ~ "After 3 Years",
+                                    time == "l_4_fn" ~ "After 4 Years"))) %>% 
+  mutate(time = fct_relevel(time, levels = c("Initial Population", "After 1 Year", 
+                                           "After 2 Years",  "After 3 Years", "After 4 Years")))
+
+# Works!
+ggplot(data = lf_sim_fn_long) +
+  geom_density_line(aes(x = length, color = time, fill = time), 
+                    alpha = 0.5) +
+  labs(color = NULL,
+       fill = NULL,
+       x = "length (mm)",
+       y = "frequency (number of lionfish)") +
+  theme_classic()+
+  facet_wrap(~time, ncol = 1) +
+  theme(strip.text = element_blank(),
+        aspect.ratio = 1/5)
 ```
 
 ```{r for loop for rj}
@@ -369,6 +514,32 @@ for(i in 1:length(lf_sim_rj$start_l_rj)){
     region <- t_r + 1
     lf_sim_rj$region[i] <- c("RJ")
 }
+
+lf_sim_rj_long <- lf_sim_rj %>% 
+  select(start_l_rj, l_1_rj, l_2_rj, l_3_rj, l_4_rj) %>% 
+  pivot_longer(cols = c("start_l_rj", "l_1_rj", "l_2_rj", "l_3_rj", "l_4_rj"),
+               names_to = "time",
+               values_to = "length") %>% 
+  mutate(time = as.factor(case_when(time == "start_l_rj" ~ "Initial Population",
+                                    time == "l_1_rj" ~ "After 1 Year",
+                                    time == "l_2_rj" ~ "After 2 Years",                            
+                                    time == "l_3_rj" ~ "After 3 Years",
+                                    time == "l_4_rj" ~ "After 4 Years"))) %>% 
+  mutate(time = fct_relevel(time, levels = c("Initial Population", "After 1 Year", 
+                                           "After 2 Years",  "After 3 Years", "After 4 Years")))
+
+# Works!
+ggplot(data = lf_sim_rj_long) +
+  geom_density_line(aes(x = length, color = time, fill = time), 
+                    alpha = 0.5) +
+  labs(color = NULL,
+       fill = NULL,
+       x = "length (mm)",
+       y = "frequency (number of lionfish)") +
+  theme_classic()+
+  facet_wrap(~time, ncol = 1) +
+  theme(strip.text = element_blank(),
+        aspect.ratio = 1/5)
 ```
 
 
@@ -416,6 +587,7 @@ ggplot(data = lf_sim_fl) +
 ```{r}
 # Set up loop to iterate model across time/age
 tset <- seq(from = 0, to = 4, by = 0.001)
+lf <- data.frame(tset, lengths = NaN*tset)
 lf_fl <- data.frame(tset, lengths = NaN*tset)
 lf_m <- data.frame(tset, lengths = NaN*tset)
 lf_fn <- data.frame(tset, lengths = NaN*tset)
@@ -425,12 +597,14 @@ for(i in 1:length(tset)){
   t <- tset[i]
   
   # Growth models
+  l_t <- l_inf*(1-exp(-k*(t-t_0)+(((c*k)/(2*pi))*sinpi(t-t_s))-(((c*k)/(2*pi))*sinpi(t_s)))) # original one
   l_t_fl <- l_inf*t_fl *(1-exp(-k*(t-t_0)+(((c*k)/(2*pi))*sinpi(t-t_s))-(((c*k)/(2*pi))*sinpi(t_s))))
   l_t_m <- l_inf*t_m* (1-exp(-k*(t-t_0)+(((c*k)/(2*pi))*sinpi(t-t_s))-(((c*k)/(2*pi))*sinpi(t_s))))
   l_t_fn <- l_inf*t_fn* (1-exp(-k*(t-t_0)+(((c*k)/(2*pi))*sinpi(t-t_s))-(((c*k)/(2*pi))*sinpi(t_s))))
   l_t_rj <- l_inf*t_rj* (1-exp(-k*(t-t_0)+(((c*k)/(2*pi))*sinpi(t-t_s))-(((c*k)/(2*pi))*sinpi(t_s))))
   
   # Storing l_t values per area
+  lf$lengths[i] <- l_t
   lf_fl$lengths[i] <- l_t_fl
   lf_m$lengths[i] <- l_t_m
   lf_fn$lengths[i] <- l_t_fn
@@ -438,6 +612,9 @@ for(i in 1:length(tset)){
 }
 
 # Including region for each area's df
+lf <- lf %>% 
+  mutate(region = "Original model")
+
 lf_rj <- lf_rj %>% 
   mutate(region = "Rio de Janeiro")
 
@@ -459,8 +636,10 @@ ggplot() +
   geom_line(data = lf_m,
             aes(x = tset, y = lengths, color = region)) +
   geom_line(data = lf_fn,
-            aes(x = tset, y = lengths, color = region)) +
+           aes(x = tset, y = lengths, color = region)) +
   geom_line(data = lf_rj,
+           aes(x = tset, y = lengths, color = region)) +
+  geom_line(data = lf,
             aes(x = tset, y = lengths, color = region)) +
   labs(x = "Age (Years)",
        y = "Total Length (mm)",
@@ -473,3 +652,14 @@ ggplot() +
 ```
 
 **Figure 3.** Estimated age-length relationship for lionfish in the modified version of the seasonalized von-Bertalanffy growth equation. 
+
+
+# Ecological implications of this model extension
+
+As shown in figures 2 and 3, 
+
+
+
+
+
+
