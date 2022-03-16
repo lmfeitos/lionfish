@@ -135,7 +135,7 @@ lionfish_sum <- lionfish_long %>%
 
 
 
-```{r}
+```{r, echo = FALSE}
 ggplot(data = lionfish_long) +
   geom_col(aes(x = total_length_tl, y = frequency)) +
   theme_classic() +
@@ -144,7 +144,7 @@ ggplot(data = lionfish_long) +
   facet_wrap(~year, scales = "free")
 ```
 
-```{r parameters}
+```{r parameters, echo = FALSE}
 l_inf = 448 # asymptotic maximum length
 # Values of temperature for each location
 # Maranhão
@@ -207,7 +207,7 @@ lf_nice <- lf %>%
 ```
 
 
-```{r for loop for florida}
+```{r for loop for florida, echo = FALSE}
 lf_sim_fl <- data.frame(start_l_fl = lf_ap13$starting_length,
                      start_a_fl  = NaN*length(lf_ap13),
                      a_1_fl = NaN*length(lf_ap13),
@@ -264,22 +264,23 @@ lf_sim_fl_long <- lf_sim_fl %>%
                                            "After 2 Years",  "After 3 Years", "After 4 Years")))
 
 # Works!
-ggplot(data = lf_sim_fl_long) +
+flo <- ggplot(data = lf_sim_fl_long) +
   geom_density_line(aes(x = length, color = time, fill = time), 
-                    alpha = 0.5) +
+                    alpha = 0.5,
+                    show.legend = F) +
   labs(color = NULL,
        fill = NULL,
-       x = "length (mm)",
-       y = "frequency (number of lionfish)",
+       x = "Length (mm)",
+       y = "Frequency (number of lionfish",
        title = "Northeast Florida") +
   theme_classic()+
-  facet_wrap(~time, ncol = 1) +
+  facet_wrap(~time, ncol = 1, scales = "free_y") +
   theme(strip.text = element_blank(),
         aspect.ratio = 1/5)
 ```
 
 
-```{r for loop for maranhao}
+```{r for loop for maranhao, echo = FALSE}
 lf_sim_m <- data.frame(start_l_m = lf_ap13$starting_length,
                      start_a_m = NaN*length(lf_ap13),
                      a_1_m = NaN*length(lf_ap13),
@@ -336,21 +337,23 @@ lf_sim_m_long <- lf_sim_m %>%
                                            "After 2 Years",  "After 3 Years", "After 4 Years")))
 
 # Works!
-ggplot(data = lf_sim_m_long) +
+ama <- ggplot(data = lf_sim_m_long) +
   geom_density_line(aes(x = length, color = time, fill = time), 
-                    alpha = 0.5) +
+                    alpha = 0.5,
+                    show.legend = F) +
   labs(color = NULL,
        fill = NULL,
-       x = "length (mm)",
-       y = "frequency (number of lionfish)",
+       x = "Length (mm)",
+       y = "Frequency (number of lionfish",
        title = "Amazon reefs") +
-  theme_classic()+
-  facet_wrap(~time, ncol = 1) +
+  scale_x_continuous(breaks = seq(0, 700, by = 100)) +
+  theme_classic() +
+  facet_wrap(~ time, ncol = 1, scales = "free_y") +
   theme(strip.text = element_blank(),
         aspect.ratio = 1/5)
 ```
 
-```{r for loop for noronha}
+```{r for loop for noronha, echo = FALSE}
 lf_sim_fn <- data.frame(start_l_fn = lf_ap13$starting_length,
                      start_a_fn = NaN*length(lf_ap13),
                      a_1_fn = NaN*length(lf_ap13),
@@ -407,21 +410,22 @@ lf_sim_fn_long <- lf_sim_fn %>%
                                            "After 2 Years",  "After 3 Years", "After 4 Years")))
 
 # Works!
-ggplot(data = lf_sim_fn_long) +
+fn <- ggplot(data = lf_sim_fn_long) +
   geom_density_line(aes(x = length, color = time, fill = time), 
-                    alpha = 0.5) +
+                    alpha = 0.5,
+                    show.legend = F) +
   labs(color = NULL,
        fill = NULL,
-       x = "length (mm)",
-       y = "frequency (number of lionfish)",
+       x = "Length (mm)",
+       y = "Frequency (number of lionfish)",
        title = "Fernando de Noronha") +
   theme_classic()+
-  facet_wrap(~time, ncol = 1) +
+  facet_wrap(~time, ncol = 1, scales = "free_y") +
   theme(strip.text = element_blank(),
         aspect.ratio = 1/5)
 ```
 
-```{r for loop for rj}
+```{r for loop for rj, echo = FALSE}
 lf_sim_rj <- data.frame(start_l_rj = lf_ap13$starting_length,
                      start_a_rj = NaN*length(lf_ap13),
                      a_1_rj = NaN*length(lf_ap13),
@@ -477,49 +481,31 @@ lf_sim_rj_long <- lf_sim_rj %>%
   mutate(time = fct_relevel(time, levels = c("Initial Population", "After 1 Year", 
                                            "After 2 Years",  "After 3 Years", "After 4 Years")))
 
-ggplot(data = lf_sim_rj_long) +
+rj <- ggplot(data = lf_sim_rj_long) +
   geom_density_line(aes(x = length, color = time, fill = time), 
                     alpha = 0.5) +
   labs(color = NULL,
        fill = NULL,
        x = "Length (mm)",
-       y = "Frequency (number of lionfish)",
+       y = "Frequency (number of lionfish",
        title = "Rio de Janeiro") +
   theme_classic()+
-  facet_wrap(~time, ncol = 1) +
+  facet_wrap(~time, ncol = 1, scales = "free_y") +
   theme(strip.text = element_blank(),
         aspect.ratio = 1/5)
 ```
 
 
-```{r}
-#lf_all <- plyr::join_all(list(lf_sim_fl_long, lf_sim_m_long, lf_sim_fn_long, lf_sim_rj_long), type = "full")
+```{r, fig.width=11, fig.height=10, echo = FALSE}
+(flo + ama) /
+  (fn + rj) +
+  plot_layout(guides = "collect")
 ```
 
-```{r, fig.width=9, fig.height=8}
-# ggplot(data = lf_all) +
-#   geom_density_line(aes(x = length, color = time, fill = time), 
-#                     alpha = 0.5) +
-#   labs(color = NULL,
-#        fill = NULL,
-#        x = "Length (mm)",
-#        y = "Frequency (number of lionfish)") +
-#   theme_classic()+
-#   facet_wrap(region~time) +
-#   theme_bw()
-```
+**Figure 2.** Shifting age and size structure of lionfish population, as sampled in April 2013 in Northeast Florida. This figure demonstrates growth of a single snapshot of individuals over four years, and does not account for any births, deaths, immigration, or emigration.
 
 
-```{r plot for figure 3 model extension, fig.width=8, fig.height=8}
-# (fl_plot + m_plot) /
-#   (fn_plot + rj_plot) +
-#   plot_annotation(tag_level = c("A"))
-```
-
-**Figure 2.** Shifting age and size structure of lionfish population, as sampled in April 2013 in Northeast Florida. A - Northeast Florida, B - Amazon reefs, C - Fernando de Noronha Archipelago, D - Rio de Janeiro. This figure demonstrates growth of a single snapshot of individuals over four years, and does not account for any births, deaths, immigration, or emigration.
-
-
-```{r}
+```{r, echo = FALSE}
 # Set up loop to iterate model across time/age
 tset <- seq(from = 0, to = 4, by = 0.001)
 lf <- data.frame(tset, lengths = NaN*tset)
@@ -563,7 +549,7 @@ lf_fn <- lf_fn %>%
   mutate(region = "Fernando de Noronha")
 ```
 
-```{r}
+```{r, echo = FALSE}
 # Plot the model output
 ggplot() +
   geom_line(data = lf_fl,
@@ -574,9 +560,6 @@ ggplot() +
            aes(x = tset, y = lengths, color = region)) +
   geom_line(data = lf_rj,
            aes(x = tset, y = lengths, color = region)) +
-  geom_line(data = lf,
-            aes(x = tset, y = lengths, color = region),
-            alpha = 0.3) +
   labs(x = "Age (Years)",
        y = "Total Length (mm)",
        color = "") +
@@ -592,7 +575,7 @@ ggplot() +
 
 # Ecological implications of this model extension
 
-As shown in figures 2 and 3, 
+As shown in figures 2 and 3, by including average water temperature as a parameter for each different area this model extension estimates that lionfish individuals are more likely to show a skewed frequency towards higher sizes more quickly (Figure 2). This is because living in environments with higher temperatures than the ones found in Northeast Florida can cause fish to grow at a faster rate. This is clearly shown in Figure 3. However, it is necessary to state that these growth patterns are applied from the population of lionfish sampled in Northeast Florida on April 2013, and thus conclusions for other areas are likely to be somewhat different due to inherent baseline data differences. 
 
 
 
