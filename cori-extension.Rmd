@@ -1,0 +1,593 @@
+---
+title: "Extension: Exploring recruitment and mortality in a lionfish population"
+author: "Cori Lopazanski"
+date: "17 March 2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+	echo = TRUE,
+	message = FALSE,
+	warning = FALSE
+)
+library(plyr)
+library(tidyverse)
+library(here)
+library(janitor)
+library(ggridges)
+
+```
+
+# Extension
+
+In Figure 3 of Johnson and Swenarton 2016, the authors show snapshots of the size distribution of lionfish population through time. Since these are snapshots, they do not show how those individuals in the collected sample (a potential proxy for the lionfish population itself) age through time. For my extension, I incorporate two additional components of population dynamics: i) the addition of new individuals through annual recruitment, and ii) the removal of individuals through natural mortality. 
+
+The starting population structure is based on the lionfish samples collected in April 2013, scaled to ten times the original counts to more closely represent a realistic number of individuals in a small population. Each year, a new recruitment class of 100 lionfish is added to the population, with length and age equal to zero. This assumes that recruitment is independent of the current focal population. This is a reasonable assumption, because lionfish are thought to have large larval dispersal distances (Freshwater et al. 2009), thus recruitment to the focal population could be driven by a large external reproductive population. 
+
+The existing focal popluation either grows in according to the best-fit seasonalized von Bertalanffy growth curve (Johnson and Swenarton 2016), or dies due to natural mortality. I use a survivorship curve specifying age-specific natural mortality (Barbour et al. 2011), where the survival to the next age class ($s_a$) is a function of the natural instantaneous mortality $M$: $s_a = e^{-M} \cdot s_{a-1}$. There is no estimate of the instantaneous mortality rate for lionfish. Here, I use $M = 0.5$, which is typical for short-lived fish species, because Johnson and Swenarton (2016) suggested that the maximum age of lionfish in the Northeast Florida population is 4 years. However, lionfish in captivity have lived as long as 30 years, so the actual mortality rate for this species may be lower (Barbour et al. 2011).
+
+```{r echo=FALSE}
+# Simulate survival of a single recruitment class of N = 100 over 10 years
+# Set of years/ages 
+age <- seq(1, 10, by = 1)
+
+# Age-specific mortality rate table
+s_a <- length(age)*NaN
+s_a[1] <- 1000 # Start with N = 1000
+
+# Calculate survival of population through time
+for(i in 2:length(age)){
+  s_a[i] <- exp(-0.5)*s_a[i-1]
+}
+
+
+# Plot population size as a function of recruitment class age:
+ggplot() +
+  geom_line(aes(x = age, y = s_a)) +
+  labs(x = "Age (years)",
+       y = "Population Size (# fish)") +
+  theme_classic()
+```
+
+***Figure 1.*** Simulation of instantaneous natural mortality for a recruitment class (age zero) of 1000 lionfish. This follows $s_a = e^{-M} \cdot s_{a-1}$ with $M = 0.5$, a common estimate for short-lived species. 
+
+
+The result of this modification shows the initial population aging over time, with a new size class introduced at each time step (Figure 2). 
+
+
+```{r include=FALSE}
+# Parameters 
+l_inf = 448 # asymptotic maximum length
+k = 0.47    # Brody growth coefficient
+c = 0.61    # intensity of seasonal growth oscillation. 
+               # varies from 0 to 1, with zero being no seasonality 
+               # and one extreme seasonality
+t_0 = 0    # theoretical time when fish was length zero
+t_s = 0.71 # timing of seasonal growth oscillation...
+              # slowest growth is at winter point, tw = ts + 0.5
+M = 0.5    # mortality 
+
+# Set up loop to iterate model across time/age
+tset <- seq(from = 0, to = 4, by = 0.001)
+lf <- data.frame(tset, lengths = NaN*tset)
+
+for(i in 1:length(tset)){
+  t <- tset[i]
+  l_t <- l_inf*(1-exp(-k*(t-t_0)+(((c*k)/(2*pi))*sinpi(t-t_s))-(((c*k)/(2*pi))*sinpi(t_s))))
+  lf$lengths[i] <- l_t
+}
+
+# Plot the model output
+ggplot() +
+  geom_line(data = lf,
+            aes(x = tset, y = lengths)) +
+  labs(x = "Age (Years)",
+       y = "Total Length (mm)") +
+  theme_classic()
+
+# Read length data
+lionfish_tl <- read.csv(here::here("data", "lionfish_length-frequency_data.csv"), sep = ";") %>% 
+  clean_names() %>% 
+  select(total_length_tl:august_2015) # remove some random extra empty columns
+
+# Create tibble in long format and separate the original year column into month and year
+lionfish_long <- lionfish_tl %>% 
+  pivot_longer(cols = april_2013:august_2015,
+               names_to = "year",
+               values_to = "frequency") %>% 
+  separate(year, c("month", "year"), "_")
+```
+
+```{r include=FALSE}
+# Starting age structure,
+lf_ap13 <- lionfish_long %>% 
+  filter(month == "april" & year == "2013") %>% 
+  uncount(frequency) %>% 
+  select(total_length_tl) %>% 
+  dplyr::rename(starting_length = total_length_tl) 
+
+# Create table of age-length relationships
+# (Nice alternative to solving the model for length)
+lf_nice <- lf %>%  
+  mutate(length_round = round(lengths, digits = 0))%>% 
+  group_by(length_round) %>% 
+  slice(1) %>% 
+  ungroup()
+
+lf_sim <- data.frame(start_l = lf_ap13$starting_length,
+                     start_a    = NaN*length(lf_ap13),
+                     a_1 = NaN*length(lf_ap13),
+                     l_1 = NaN*length(lf_ap13),
+                     a_2 = NaN*length(lf_ap13),
+                     l_2 = NaN*length(lf_ap13), 
+                     a_3 = NaN*length(lf_ap13),
+                     l_3 = NaN*length(lf_ap13),
+                     a_4 = NaN*length(lf_ap13),
+                     l_4 = NaN*length(lf_ap13))
+
+# Test out first as a loop
+for(i in 1:length(lf_sim$start_l)){
+    # Starting Age/Length
+    a <- lf_nice$tset[lf_nice$length_round == lf_sim$start_l[i]] 
+    lf_sim$start_a[i] <- a
+    
+    # 1-yr Age/Length
+    t <- a + 1
+    lf_sim$a_1[i] <- t
+    lf_sim$l_1[i] <- l_inf*(1-exp(-k*(t-t_0)+(((c*k)/(2*pi))*sinpi(t-t_s))-(((c*k)/(2*pi))*sinpi(t_s))))
+    
+    # 2-yr Age/Length
+    t <- t + 1
+    lf_sim$a_2[i] <- t
+    lf_sim$l_2[i] <- l_inf*(1-exp(-k*(t-t_0)+(((c*k)/(2*pi))*sinpi(t-t_s))-(((c*k)/(2*pi))*sinpi(t_s))))
+   
+    # 3-yr Age/Length
+    t <- t + 1
+    lf_sim$a_3[i] <- t
+    lf_sim$l_3[i] <- l_inf*(1-exp(-k*(t-t_0)+(((c*k)/(2*pi))*sinpi(t-t_s))-(((c*k)/(2*pi))*sinpi(t_s))))
+    
+    # 3-yr Age/Length
+    t <- t + 1
+    lf_sim$a_4[i] <- t
+    lf_sim$l_4[i] <- l_inf*(1-exp(-k*(t-t_0)+(((c*k)/(2*pi))*sinpi(t-t_s))-(((c*k)/(2*pi))*sinpi(t_s))))
+}
+
+```
+
+
+```{r echo=FALSE}
+#################################################################
+# Starting Population: Time Zero
+#################################################################
+lf_start <- data.frame(a_0 = lf_sim$start_a,
+                       l_0 = lf_sim$start_l)
+
+# Separate into age classes
+lf_sim2 <- lf_start %>% 
+  group_by(a_0, l_0) %>% 
+  dplyr::count() %>% 
+  dplyr::mutate(n = n*10) %>% # make population much larger
+  dplyr::rename(n_0 = n)
+
+# Create population structure vector
+pop <- data.frame(age_class = seq(from = 0, to = 400, by = 10))
+pop <- full_join(pop, lf_sim2, by = c("age_class" = "l_0"))
+
+
+#################################################################
+# Simulate Population from Time Zero to One Year
+#################################################################
+# Calculate survivors from n_0 to n_1
+pop_sim <- pop %>% 
+  mutate(n_1 = round(n_0*exp(-0.5), digits = 0))
+
+# Add 100 recruits at size 0 to n_1
+pop_sim$n_1[pop_sim$age_class == 0] <- 100
+
+
+# Calculate change in age after one year
+pop_sim$a_1 = pop_sim$a_0+1
+pop_sim$a_1[pop_sim$age_class == 0] <- 0 # specify age for recruit class
+
+# Calculate length classes at one year
+pop_sim$l_1 = l_inf*(1-exp(-k*(pop_sim$a_1-t_0)+(((c*k)/(2*pi))*sinpi(pop_sim$a_1-t_s))-(((c*k)/(2*pi))*sinpi(t_s))))
+pop_sim$l_1 = plyr::round_any(pop_sim$l_1, 10) # round to nearest ten
+
+# Regroup length classes
+pop_temp <- pop_sim %>% 
+  dplyr::group_by(l_1) %>% 
+  dplyr::summarize(n_1 = sum(n_1),
+                   a_1 = round(mean(a_1), digits = 3)) %>% 
+  drop_na()
+  
+# Add to population vector
+pop_1 <- full_join(pop, pop_temp, by = c("age_class" = "l_1"))
+
+#################################################################
+# Simulate Population from Year 1 to Year 2
+#################################################################
+# Calculate survivors from n_1 to n_2
+pop_sim <- pop_1 %>% 
+  mutate(n_2 = round(n_1*exp(-0.5), digits = 0))
+
+# Add 100 recruits at size 0 to n_1
+pop_sim$n_2[pop_sim$age_class == 0] <- 100
+
+# Calculate change in age after one year
+pop_sim$a_2 = pop_sim$a_1+1
+pop_sim$a_2[pop_sim$age_class == 0] <- 0 # specify age for recruit class
+
+# Calculate length classes at one year
+pop_sim$l_2 = l_inf*(1-exp(-k*(pop_sim$a_2-t_0)+(((c*k)/(2*pi))*sinpi(pop_sim$a_2-t_s))-(((c*k)/(2*pi))*sinpi(t_s))))
+pop_sim$l_2 = plyr::round_any(pop_sim$l_2, 10) # round to nearest ten
+
+# Regroup length classes
+pop_temp <- pop_sim %>% 
+  dplyr::group_by(l_2) %>% 
+  dplyr::summarize(n_2 = sum(n_2),
+                   a_2 = round(mean(a_2), digits = 3)) %>% 
+  drop_na()
+  
+# Add to population vector
+pop_2 <- full_join(pop_1, pop_temp, by = c("age_class" = "l_2"))
+
+
+#################################################################
+# Simulate Population from Year 2 to Year 3
+#################################################################
+# Calculate survivors from n_2 to n_3
+pop_sim <- pop_2 %>% 
+  mutate(n_3 = round(n_2*exp(-0.5), digits = 0))
+
+# Add 100 recruits at size 0 to n_1
+pop_sim$n_3[pop_sim$age_class == 0] <- 100
+
+# Calculate change in age after one year
+pop_sim$a_3 = pop_sim$a_2+1
+pop_sim$a_3[pop_sim$age_class == 0] <- 0 # specify age for recruit class
+
+# Calculate length classes at one year
+pop_sim$l_3 = l_inf*(1-exp(-k*(pop_sim$a_3-t_0)+(((c*k)/(2*pi))*sinpi(pop_sim$a_3-t_s))-(((c*k)/(2*pi))*sinpi(t_s))))
+pop_sim$l_3 = plyr::round_any(pop_sim$l_3, 10) # round to nearest ten
+
+# Regroup length classes
+pop_temp <- pop_sim %>% 
+  dplyr::group_by(l_3) %>% 
+  dplyr::summarize(n_3 = sum(n_3),
+                   a_3 = round(mean(a_3), digits = 3)) %>% 
+  drop_na()
+  
+# Add to population vector
+pop_3 <- full_join(pop_2, pop_temp, by = c("age_class" = "l_3"))
+
+
+```
+
+
+
+```{r echo=FALSE}
+# Create a lengthed version of the simulation for graphing
+extension <- pop_3 %>% 
+  pivot_longer(cols = a_0:a_3,
+               names_to = "id",
+               values_to = "count") %>% 
+  filter(!is.na(count)) %>% 
+  filter(id %in% c("n_0", "n_1", "n_2", "n_3")) %>% 
+  mutate(id = case_when(id == "n_0" ~ "Starting Population",
+                        id == "n_1" ~ "After 1 Year",
+                        id == "n_2" ~ "After 2 Years",
+                        id == "n_3" ~ "After 3 Years")) %>% 
+  mutate(id = fct_relevel(id, levels = c("Starting Population", "After 1 Year", 
+                                           "After 2 Years",  "After 3 Years"))) %>% 
+  uncount(count)
+
+# Works!
+ggplot(data = extension) +
+  geom_density_line(aes(x = age_class, color = id, fill = id), alpha = 0.5) +
+  labs(x = "length (mm)",
+       y = "proportion of lionfish",
+       color = NULL,
+       fill = NULL) +
+  theme_classic() +
+  facet_wrap(~id, ncol = 1) +
+  theme(strip.text = element_blank(),
+        aspect.ratio = 1/5)
+```
+
+***Figure 2*** Changes in the size structure of a lionfish population after adding annual recruitment and natural mortality. The starting population (red) grows one size class each year following the best-fit seasonalized von Bertalanffy growth equation (Johnson and Swenarton 2016), with a proporiton of each size class removed due to natural instantaneous mortality. Each year, an additional class of 100 recruits are added to the population. The population is shown after one year (green), two years (blue) and three years (purple).
+
+
+There are a few distinct differences resulting from my modification (Figure 2). First, the total number of individuals reaching the older age/size classes was much smaller than in the replication simulation due to loss of individuals through natural mortality. Also, since recruitment was modeled as a consistent class at age and length zero, there is no variation added into the population structure. In reality, recruitment likely occurs over several weeks, and this timing would result in a class with a wider range in size, rather than the single size class shown. The way my model is set up, growth is consistent for each size class - individuals either grow the exact amount predicted each year, or they die. This is not consistent with natural variation, and does not consider other factors that may influence how much an individual grows in a given year, such as environmental conditions, prey availability, and inherent variation in biological processes among individuals.
+
+Additionally, it appears that the arbitrary selection of a recruitment class of 100 lionfish may not be sufficient to sustain the population against natural mortality. Comparing the total population size at each time step shows that the overall population is decreasing (Figure 3).
+
+```{r echo=FALSE}
+extension_2 <- extension %>% 
+  group_by(id) %>% 
+  dplyr::summarize(n = n())
+
+ggplot(data = extension_2) +
+  geom_point(aes(x = id, y = n)) +
+  labs(x = NULL,
+       y = "Total Population Size")+
+  theme_classic()
+```
+
+***Figure 3.*** Changes in the total population size for lionfish, modeled using a single recruitment class of 100 lionfish at each year, and an instantaneous natural mortality rate of 0.5.
+
+With the parameters for growth from Johnson and Swenarton (2016) and natural mortality set at M = 0.5, the annual supply of recruitment would need to be at least 1038 for the population to remain stable over the three years analyzed (Figure 4). At higher numbers of annual recruitment, the population increases over time, and at lower numbers, the population decreases.
+
+```{r echo=FALSE}
+#################################################################
+# Starting Population: Time Zero
+#################################################################
+lf_start <- data.frame(a_0 = lf_sim$start_a,
+                       l_0 = lf_sim$start_l)
+
+# Separate into age classes
+lf_sim2 <- lf_start %>% 
+  group_by(a_0, l_0) %>% 
+  dplyr::count() %>% 
+  dplyr::mutate(n = n*10) %>% # make population much larger
+  dplyr::rename(n_0 = n)
+
+# Create population structure vector
+pop <- data.frame(age_class = seq(from = 0, to = 400, by = 10))
+pop <- full_join(pop, lf_sim2, by = c("age_class" = "l_0"))
+
+
+#################################################################
+# Simulate Population from Time Zero to One Year
+#################################################################
+# Calculate survivors from n_0 to n_1
+pop_sim <- pop %>% 
+  mutate(n_1 = round(n_0*exp(-0.5), digits = 0))
+
+# Add 100 recruits at size 0 to n_1
+pop_sim$n_1[pop_sim$age_class == 0] <- 1038
+
+
+# Calculate change in age after one year
+pop_sim$a_1 = pop_sim$a_0+1
+pop_sim$a_1[pop_sim$age_class == 0] <- 0 # specify age for recruit class
+
+# Calculate length classes at one year
+pop_sim$l_1 = l_inf*(1-exp(-k*(pop_sim$a_1-t_0)+(((c*k)/(2*pi))*sinpi(pop_sim$a_1-t_s))-(((c*k)/(2*pi))*sinpi(t_s))))
+pop_sim$l_1 = plyr::round_any(pop_sim$l_1, 10) # round to nearest ten
+
+# Regroup length classes
+pop_temp <- pop_sim %>% 
+  dplyr::group_by(l_1) %>% 
+  dplyr::summarize(n_1 = sum(n_1),
+                   a_1 = round(mean(a_1), digits = 3)) %>% 
+  drop_na()
+  
+# Add to population vector
+pop_1 <- full_join(pop, pop_temp, by = c("age_class" = "l_1"))
+
+#################################################################
+# Simulate Population from Year 1 to Year 2
+#################################################################
+# Calculate survivors from n_1 to n_2
+pop_sim <- pop_1 %>% 
+  mutate(n_2 = round(n_1*exp(-0.5), digits = 0))
+
+# Add 100 recruits at size 0 to n_1
+pop_sim$n_2[pop_sim$age_class == 0] <- 1038
+
+# Calculate change in age after one year
+pop_sim$a_2 = pop_sim$a_1+1
+pop_sim$a_2[pop_sim$age_class == 0] <- 0 # specify age for recruit class
+
+# Calculate length classes at one year
+pop_sim$l_2 = l_inf*(1-exp(-k*(pop_sim$a_2-t_0)+(((c*k)/(2*pi))*sinpi(pop_sim$a_2-t_s))-(((c*k)/(2*pi))*sinpi(t_s))))
+pop_sim$l_2 = plyr::round_any(pop_sim$l_2, 10) # round to nearest ten
+
+# Regroup length classes
+pop_temp <- pop_sim %>% 
+  dplyr::group_by(l_2) %>% 
+  dplyr::summarize(n_2 = sum(n_2),
+                   a_2 = round(mean(a_2), digits = 3)) %>% 
+  drop_na()
+  
+# Add to population vector
+pop_2 <- full_join(pop_1, pop_temp, by = c("age_class" = "l_2"))
+
+
+#################################################################
+# Simulate Population from Year 2 to Year 3
+#################################################################
+# Calculate survivors from n_2 to n_3
+pop_sim <- pop_2 %>% 
+  mutate(n_3 = round(n_2*exp(-0.5), digits = 0))
+
+# Add 100 recruits at size 0 to n_1
+pop_sim$n_3[pop_sim$age_class == 0] <- 1038
+
+# Calculate change in age after one year
+pop_sim$a_3 = pop_sim$a_2+1
+pop_sim$a_3[pop_sim$age_class == 0] <- 0 # specify age for recruit class
+
+# Calculate length classes at one year
+pop_sim$l_3 = l_inf*(1-exp(-k*(pop_sim$a_3-t_0)+(((c*k)/(2*pi))*sinpi(pop_sim$a_3-t_s))-(((c*k)/(2*pi))*sinpi(t_s))))
+pop_sim$l_3 = plyr::round_any(pop_sim$l_3, 10) # round to nearest ten
+
+# Regroup length classes
+pop_temp <- pop_sim %>% 
+  dplyr::group_by(l_3) %>% 
+  dplyr::summarize(n_3 = sum(n_3),
+                   a_3 = round(mean(a_3), digits = 3)) %>% 
+  drop_na()
+  
+# Add to population vector
+pop_3 <- full_join(pop_2, pop_temp, by = c("age_class" = "l_3"))
+
+
+extension_3 <- pop_3 %>% 
+  pivot_longer(cols = a_0:a_3,
+               names_to = "id",
+               values_to = "count") %>% 
+  filter(!is.na(count)) %>% 
+  filter(id %in% c("n_0", "n_1", "n_2", "n_3")) %>% 
+  mutate(id = case_when(id == "n_0" ~ "Starting Population",
+                        id == "n_1" ~ "After 1 Year",
+                        id == "n_2" ~ "After 2 Years",
+                        id == "n_3" ~ "After 3 Years")) %>% 
+  mutate(id = fct_relevel(id, levels = c("Starting Population", "After 1 Year", 
+                                           "After 2 Years",  "After 3 Years"))) %>% 
+  uncount(count)
+
+extension_3 <- extension_3 %>% 
+  group_by(id) %>% 
+  dplyr::summarize(n = n())
+
+#################################################################
+# Starting Population: Time Zero
+#################################################################
+lf_start <- data.frame(a_0 = lf_sim$start_a,
+                       l_0 = lf_sim$start_l)
+
+# Separate into age classes
+lf_sim2 <- lf_start %>% 
+  group_by(a_0, l_0) %>% 
+  dplyr::count() %>% 
+  dplyr::mutate(n = n*10) %>% # make population much larger
+  dplyr::rename(n_0 = n)
+
+# Create population structure vector
+pop <- data.frame(age_class = seq(from = 0, to = 400, by = 10))
+pop <- full_join(pop, lf_sim2, by = c("age_class" = "l_0"))
+
+
+#################################################################
+# Simulate Population from Time Zero to One Year
+#################################################################
+# Calculate survivors from n_0 to n_1
+pop_sim <- pop %>% 
+  mutate(n_1 = round(n_0*exp(-0.5), digits = 0))
+
+# Add 100 recruits at size 0 to n_1
+pop_sim$n_1[pop_sim$age_class == 0] <- 1200
+
+
+# Calculate change in age after one year
+pop_sim$a_1 = pop_sim$a_0+1
+pop_sim$a_1[pop_sim$age_class == 0] <- 0 # specify age for recruit class
+
+# Calculate length classes at one year
+pop_sim$l_1 = l_inf*(1-exp(-k*(pop_sim$a_1-t_0)+(((c*k)/(2*pi))*sinpi(pop_sim$a_1-t_s))-(((c*k)/(2*pi))*sinpi(t_s))))
+pop_sim$l_1 = plyr::round_any(pop_sim$l_1, 10) # round to nearest ten
+
+# Regroup length classes
+pop_temp <- pop_sim %>% 
+  dplyr::group_by(l_1) %>% 
+  dplyr::summarize(n_1 = sum(n_1),
+                   a_1 = round(mean(a_1), digits = 3)) %>% 
+  drop_na()
+  
+# Add to population vector
+pop_1 <- full_join(pop, pop_temp, by = c("age_class" = "l_1"))
+
+#################################################################
+# Simulate Population from Year 1 to Year 2
+#################################################################
+# Calculate survivors from n_1 to n_2
+pop_sim <- pop_1 %>% 
+  mutate(n_2 = round(n_1*exp(-0.5), digits = 0))
+
+# Add 100 recruits at size 0 to n_1
+pop_sim$n_2[pop_sim$age_class == 0] <- 1200
+
+# Calculate change in age after one year
+pop_sim$a_2 = pop_sim$a_1+1
+pop_sim$a_2[pop_sim$age_class == 0] <- 0 # specify age for recruit class
+
+# Calculate length classes at one year
+pop_sim$l_2 = l_inf*(1-exp(-k*(pop_sim$a_2-t_0)+(((c*k)/(2*pi))*sinpi(pop_sim$a_2-t_s))-(((c*k)/(2*pi))*sinpi(t_s))))
+pop_sim$l_2 = plyr::round_any(pop_sim$l_2, 10) # round to nearest ten
+
+# Regroup length classes
+pop_temp <- pop_sim %>% 
+  dplyr::group_by(l_2) %>% 
+  dplyr::summarize(n_2 = sum(n_2),
+                   a_2 = round(mean(a_2), digits = 3)) %>% 
+  drop_na()
+  
+# Add to population vector
+pop_2 <- full_join(pop_1, pop_temp, by = c("age_class" = "l_2"))
+
+
+#################################################################
+# Simulate Population from Year 2 to Year 3
+#################################################################
+# Calculate survivors from n_2 to n_3
+pop_sim <- pop_2 %>% 
+  mutate(n_3 = round(n_2*exp(-0.5), digits = 0))
+
+# Add 100 recruits at size 0 to n_1
+pop_sim$n_3[pop_sim$age_class == 0] <- 1200
+
+# Calculate change in age after one year
+pop_sim$a_3 = pop_sim$a_2+1
+pop_sim$a_3[pop_sim$age_class == 0] <- 0 # specify age for recruit class
+
+# Calculate length classes at one year
+pop_sim$l_3 = l_inf*(1-exp(-k*(pop_sim$a_3-t_0)+(((c*k)/(2*pi))*sinpi(pop_sim$a_3-t_s))-(((c*k)/(2*pi))*sinpi(t_s))))
+pop_sim$l_3 = plyr::round_any(pop_sim$l_3, 10) # round to nearest ten
+
+# Regroup length classes
+pop_temp <- pop_sim %>% 
+  dplyr::group_by(l_3) %>% 
+  dplyr::summarize(n_3 = sum(n_3),
+                   a_3 = round(mean(a_3), digits = 3)) %>% 
+  drop_na()
+  
+# Add to population vector
+pop_3 <- full_join(pop_2, pop_temp, by = c("age_class" = "l_3"))
+
+
+extension_4 <- pop_3 %>% 
+  pivot_longer(cols = a_0:a_3,
+               names_to = "id",
+               values_to = "count") %>% 
+  filter(!is.na(count)) %>% 
+  filter(id %in% c("n_0", "n_1", "n_2", "n_3")) %>% 
+  mutate(id = case_when(id == "n_0" ~ "Starting Population",
+                        id == "n_1" ~ "After 1 Year",
+                        id == "n_2" ~ "After 2 Years",
+                        id == "n_3" ~ "After 3 Years")) %>% 
+  mutate(id = fct_relevel(id, levels = c("Starting Population", "After 1 Year", 
+                                           "After 2 Years",  "After 3 Years"))) %>% 
+  uncount(count)
+
+extension_4 <- extension_4 %>% 
+  group_by(id) %>% 
+  dplyr::summarize(n = n())
+
+
+
+ggplot() +
+  geom_point(data = extension_4, aes(x = id, y = n, color = "Annual Recruitment = 1100 fish")) +
+  geom_point(data = extension_3, aes(x = id, y = n, color = "Annual Recruitment = 1038 fish")) +
+  geom_point(data = extension_2, aes(x = id, y = n, color = "Annual Recruitment = 100 fish")) +
+  labs(x = NULL,
+       color = NULL,
+       y = "Total Population Size")+
+  theme_classic()
+
+```
+
+***Figure 4.*** Resulting population size across three years for various annual recruitment class sizes: 100 (red), 1038 (green), and 1100 (blue). 
+
+***
+
+# Citations
+
+Barbour, A.B., Allen, M.S., Frazer, T.K., Sherman, K.D. (2011). Evaluating the Potential Efficacy of Invasive Lionfish (Pterois volitans) Removals. PLOS ONE 6(5). https://doi.org/10.1371/annotation/01ecd7b0-1be0-4e2f-87c7-079d5f1a1c32 
+
+Wilson Freshwater, D., Hines, A., Parham, S. et al. (2009). Mitochondrial control region sequence analyses indicate dispersal from the US East Coast as the source of the invasive Indo-Pacific lionfish Pterois volitans in the Bahamas. Mar Biol 156, 1213–1221. https://doi.org/10.1007/s00227-009-1163-8
+
+Johnson, E. G., & Swenarton, M. K. (2016). Age, growth and population structure of invasive lionfish (Pterois volitans/miles) in northeast Florida using a length-based, age-structured population model. PeerJ, 4, e2730. https://doi.org/10.7717/peerj.2730
+
+
